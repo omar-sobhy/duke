@@ -1,0 +1,26 @@
+{
+  "name": "duke",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "mongoose": "^8.10.0",
+    "superagent": "^10.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/superagent": "^8.1.9",
+    "eslint": "^9.19.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.23.0"
+  }
+}
