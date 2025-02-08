@@ -19,7 +19,7 @@ export enum Colour {
 }
 
 export function colour(text: string, colourName: Colour) {
-  return `\x03${colourName}${text}\x03`;
+  return `\x03${colourName.toString().padStart(2, '0')}${text}\x03`;
 }
 
 export function bold(text: string) {
