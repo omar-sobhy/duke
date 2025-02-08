@@ -92,7 +92,7 @@ export class LookupHandler implements CommandHandler {
       return;
     }
 
-    const result = await lookup(command.params[0]);
+    const result = await lookup(command.params.join(' '));
 
     if (result.type === 'error') {
       command.privmsg.reply(`An error occurred: ${result.message}`);

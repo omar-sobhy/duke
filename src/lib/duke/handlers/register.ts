@@ -31,7 +31,7 @@ export class RegisterHandler implements CommandHandler {
       return Err('Usage: !register <username>.');
     }
 
-    const result = await lookup(command.params[0]);
+    const result = await lookup(command.params.join(' '));
 
     if (result.type === 'error') {
       return result;
@@ -42,7 +42,7 @@ export class RegisterHandler implements CommandHandler {
 
     try {
       const _playerModel = playerModel(mongoose);
-      if (!(await _playerModel.findOne({ name: command.params[0] }))) {
+      if (!(await _playerModel.findOne({ name: command.params.join(' ') }))) {
         await new _playerModel(playerData).save();
       }
 
