@@ -131,16 +131,22 @@ export class Duke {
 
               if (!current && next) {
                 builder
+                  .colour(p.name, Colour.RED)
+                  .normal(' :: ')
                   .normal(`${emojii} `)
                   .colour(next.level, Colour.GREEN)
                   .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
               } else if (current?.xp !== next?.xp) {
-                const diff = Number(next?.xp) - Number(current?.xp);
+                const diff =
+                  Number(next?.xp.replaceAll(',', '')) -
+                  Number(current?.xp.replaceAll(',', '') ?? 0);
 
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const level = next!.level;
 
                 builder
+                  .colour(p.name, Colour.RED)
+                  .normal(' :: ')
                   .normal(`${emojii} `)
                   .colour(level, Colour.GREEN)
                   .colour(` (+${diff} XP) `, Colour.LIGHT_GREEN);
