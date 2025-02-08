@@ -116,7 +116,12 @@ export class Duke {
               Runecrafting: '🔁',
             };
 
-            const builder = new FormattingBuilder('');
+            const updated = false;
+
+            const builder = new FormattingBuilder('').colour(
+              p.name,
+              Colour.RED,
+            );
 
             Object.keys(skillsMap).forEach((s) => {
               const current = currentSkills.find(
@@ -130,13 +135,16 @@ export class Duke {
               const emojii = skillsMap[s];
 
               if (!current && next) {
+                updated = true;
+
                 builder
-                  .colour(p.name, Colour.RED)
                   .normal(' :: ')
                   .normal(`${emojii} `)
                   .colour(next.level, Colour.GREEN)
                   .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
               } else if (current?.xp !== next?.xp) {
+                updated = true;
+
                 const diff =
                   Number(next?.xp.replaceAll(',', '')) -
                   Number(current?.xp.replaceAll(',', '') ?? 0);
@@ -145,7 +153,6 @@ export class Duke {
                 const level = next!.level;
 
                 builder
-                  .colour(p.name, Colour.RED)
                   .normal(' :: ')
                   .normal(`${emojii} `)
                   .colour(level, Colour.GREEN)
@@ -156,7 +163,7 @@ export class Duke {
             p.skills = newSkills;
 
             this.clients.forEach((c) => {
-              if (builder.text.trim() !== '') {
+              if (updated) {
                 c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
               }
             });
