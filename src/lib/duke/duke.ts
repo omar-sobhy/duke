@@ -116,7 +116,7 @@ export class Duke {
               Runecrafting: '🔁',
             };
 
-            const updated = false;
+            let updated = false;
 
             const builder = new FormattingBuilder('').colour(
               p.name,
