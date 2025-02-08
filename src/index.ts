@@ -1,11 +1,18 @@
-import { Message } from './lib/irc/message.js';
+import { Duke } from './lib/duke/duke.js';
+import { readFile } from 'node:fs/promises';
+import { configSchema } from './lib/duke/config.js';
+import { database } from './lib/database/index.js';
 
-const messages = [
-  ':rizon NICK 23',
-  ':hik!hikilaka@asdf.com PRIVMSG #trollhour :testing 123 abc xyz :a',
-];
+const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
-messages.forEach((m) => {
-  const msg = Message.parse(m);
-  console.log(msg);
-});
+const config = configSchema.validate(JSON.parse(rawConfig));
+
+if (config.error) {
+  throw config.error;
+}
+
+const mongoose = await database(config.value.databaseHost);
+
+const duke = new Duke({ ...config.value, database: mongoose });
+
+duke.connect();

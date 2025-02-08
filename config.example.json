@@ -1,0 +1,12 @@
+{
+    "clients": [
+        {
+            "host": "irc.rizon.net",
+            "port": 6660,
+            "logging": false,
+            "nickname": "Duke",
+            "serverName": "Rizon"
+        }
+    ],
+    "privmsgCommandPrefix": "!"
+}

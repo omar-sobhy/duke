@@ -5,15 +5,17 @@ export interface Player {
   skills: {
     skillName: string;
     level: string;
+    xp: string;
   }[];
 }
 
-const playerSchema = new Schema<Player>({
+export const playerSchema = new Schema<Player>({
   name: String,
   skills: [
     {
       skillName: String,
       level: String,
+      xp: String,
     },
   ],
 });

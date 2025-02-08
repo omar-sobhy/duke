@@ -1,12 +1,7 @@
-import { Error } from '../result.type';
+import { Failure } from '../result.type.js';
 
-export class NickError implements Error<string> {
-  type = 'error' as const;
-  message: string;
-  data: string;
-
+export class NickError extends Failure<string> {
   constructor(nickname: string) {
-    this.message = `Could not change nickname to '${nickname}'`;
-    this.data = nickname;
+    super(`Could not change nickname to '${nickname}'`, nickname);
   }
 }

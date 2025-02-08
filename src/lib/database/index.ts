@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
-import { playerModel } from './models/player.model';
+import { playerModel } from './models/player.model.js';
 
-const models = [playerModel(mongoose)];
+export const models = [playerModel(mongoose)];
 
-export { models };
+export async function database(url: string) {
+  return await mongoose.connect(url);
+}

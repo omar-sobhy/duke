@@ -19,14 +19,16 @@ export class Prefix {
   }
 
   public static parse(rawPrefix: string): Prefix {
-    const data = rawPrefix.split(' ');
+    rawPrefix = rawPrefix.substring(1);
+
+    const data = rawPrefix.split('@');
     if (data.length === 1) {
       return new Prefix({
         serverName: data[0],
       });
     }
 
-    const [rest, host] = rawPrefix.split('@');
+    const [rest, host] = data;
     if (rest.includes('!')) {
       const [nickname, user] = rest.split('!');
       return new Prefix({
@@ -40,5 +42,24 @@ export class Prefix {
       nickname: rest,
       host,
     });
+  }
+
+  public toString(): string {
+    if (this.serverName) {
+      return this.serverName;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let retval = this.nickname!;
+
+    if (this.user) {
+      retval += `!${this.user}`;
+    }
+
+    if (this.host) {
+      retval += `@${this.host}`;
+    }
+
+    return retval;
   }
 }

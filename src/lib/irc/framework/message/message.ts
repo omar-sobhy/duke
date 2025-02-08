@@ -1,26 +1,30 @@
+import { Client } from '../client.js';
 import { Prefix } from './prefix.js';
 
 interface MessageOptions {
   readonly command: string;
-  readonly params?: string[];
+  readonly params: string[];
   readonly trailing?: string;
   prefix?: Prefix;
+  client: Client;
 }
 
 export class Message {
   public readonly command: string;
-  public readonly params?: string[];
+  public readonly params: string[];
   public readonly trailing?: string;
-  public prefix?: Prefix;
+  public readonly prefix?: Prefix;
+  public readonly client: Client;
 
   private constructor(options: MessageOptions) {
     this.prefix = options.prefix;
     this.command = options.command;
     this.params = options.params;
     this.trailing = options.trailing;
+    this.client = options.client;
   }
 
-  public static parse(rawMessage: string) {
+  public static parse(rawMessage: string, client: Client) {
     const data = rawMessage.split(' ');
 
     let prefix: Prefix | undefined = undefined;
@@ -32,23 +36,22 @@ export class Message {
       prefix = Prefix.parse(data[0]);
 
       command = data[1];
-
-      if (data.length > 2) {
-        const rawParamsIndex = rawMessage.substring(1).indexOf(':');
-
-        const rawParams = rawMessage.substring(rawParamsIndex + 1);
-
-        const trailingIndex = rawParams.indexOf(':');
-
-        if (trailingIndex !== -1) {
-          params = rawParams.substring(0, trailingIndex).split(' ');
-          trailing = rawParams.substring(trailingIndex);
-        } else {
-          params = rawParams.split(' ');
-        }
-      }
     } else {
       command = data[0];
+    }
+
+    rawMessage = rawMessage.substring(
+      rawMessage.indexOf(command) + command.length + 1,
+    );
+
+    const index = rawMessage.indexOf(':');
+    if (index !== -1) {
+      trailing = rawMessage.substring(index + 1);
+      const paramsSubstring = rawMessage.substring(0, index).trim();
+
+      params = paramsSubstring.length === 0 ? [] : paramsSubstring.split(' ');
+    } else {
+      params = rawMessage.split(' ');
     }
 
     return new Message({
@@ -56,6 +59,7 @@ export class Message {
       params,
       prefix,
       trailing,
+      client,
     });
   }
 }

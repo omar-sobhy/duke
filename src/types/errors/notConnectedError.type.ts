@@ -1,10 +1,7 @@
-import { Error } from '../result.type';
+import { Failure } from '../result.type.js';
 
-export class NotConnectedError implements Error<string> {
-  type = 'error' as const;
-  message: string;
-
+export class NotConnectedError extends Failure<string> {
   constructor() {
-    this.message = 'Not connected.';
+    super('Not connected.');
   }
 }
