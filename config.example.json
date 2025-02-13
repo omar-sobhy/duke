@@ -5,8 +5,14 @@
             "port": 6660,
             "logging": false,
             "nickname": "Duke",
-            "serverName": "Rizon"
+            "serverName": "Rizon",
+            "initialChannels": [
+                {
+                    "name": "#duketest"
+                }
+            ]
         }
     ],
-    "privmsgCommandPrefix": "!"
+    "privmsgCommandPrefix": "!",
+    "databaseHost": "mongodb://localhost:27017/duke"
 }
