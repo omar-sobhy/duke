@@ -9,6 +9,7 @@ import { PrivmsgCommand } from './privmsgCommand.js';
 import { RegisterHandler } from './handlers/register.js';
 import { playerModel } from '../database/models/player.model.js';
 import { Colour, FormattingBuilder } from '../irc/formatting.js';
+import { SourceHandler } from './handlers/source.js';
 
 export interface CommandHandler {
   match(duke: Duke, command: PrivmsgCommand): Promise<boolean>;
@@ -29,7 +30,9 @@ export class Duke {
       return new Client(c);
     });
 
-    this.commandHandlers = [LookupHandler, RegisterHandler].map((h) => new h());
+    this.commandHandlers = [LookupHandler, RegisterHandler, SourceHandler].map(
+      (h) => new h(),
+    );
   }
 
   public async connect() {
