@@ -74,103 +74,106 @@ export class Duke {
 
       await c.connect();
 
-      setInterval(async () => {
-        const playerModel_ = playerModel(mongoose);
+      setInterval(
+        async () => {
+          const playerModel_ = playerModel(mongoose);
 
-        const players = await playerModel_.find();
+          const players = await playerModel_.find();
 
-        console.log(`Fetching...`);
+          console.log('--- Fetching...');
 
-        players
-          .filter((p) => !!p)
-          .forEach(async (p) => {
-            const result = await lookup(p.name);
+          players
+            .filter((p) => !!p)
+            .forEach(async (p) => {
+              const result = await lookup(p.name);
 
-            if (result.type === 'error') {
-              console.error(result);
-              return;
-            }
+              if (result.type === 'error') {
+                console.error(result);
+                return;
+              }
 
-            console.log(`Fetched ${result.data?.name}`);
+              console.log(`--- Fetched ${result.data?.name}`);
 
-            const currentSkills = p.skills;
+              const currentSkills = p.skills;
 
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const newSkills = result.data!.skills;
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const newSkills = result.data!.skills;
 
-            const skillsMap: Record<string, string> = {
-              Attack: '⚔️',
-              Defence: '🛡️',
-              Strength: '💪',
-              Hitpoints: '♥️',
-              Ranged: '🏹',
-              Prayer: '⛪',
-              Magic: '🧙',
-              Cooking: '🍳',
-              Woodcutting: '🪓',
-              Fishing: '🐟',
-              Firemaking: '🔥',
-              Crafting: '⚒️',
-              Smithing: '🔨',
-              Mining: '⛏️',
-              Runecrafting: '🔁',
-            };
+              const skillsMap: Record<string, string> = {
+                Attack: '⚔️',
+                Defence: '🛡️',
+                Strength: '💪',
+                Hitpoints: '♥️',
+                Ranged: '🏹',
+                Prayer: '⛪',
+                Magic: '🧙',
+                Cooking: '🍳',
+                Woodcutting: '🪓',
+                Fishing: '🐟',
+                Firemaking: '🔥',
+                Crafting: '⚒️',
+                Smithing: '🔨',
+                Mining: '⛏️',
+                Runecrafting: '🔁',
+              };
 
-            let updated = false;
+              let updated = false;
 
-            const builder = new FormattingBuilder('').colour(
-              p.name,
-              Colour.RED,
-            );
-
-            Object.keys(skillsMap).forEach((s) => {
-              const current = currentSkills.find(
-                (currentSkill) => currentSkill.skillName === s,
+              const builder = new FormattingBuilder('').colour(
+                p.name,
+                Colour.RED,
               );
 
-              const next = newSkills.find(
-                (newSkill) => newSkill.skillName === s,
-              );
+              Object.keys(skillsMap).forEach((s) => {
+                const current = currentSkills.find(
+                  (currentSkill) => currentSkill.skillName === s,
+                );
 
-              const emojii = skillsMap[s];
+                const next = newSkills.find(
+                  (newSkill) => newSkill.skillName === s,
+                );
 
-              if (!current && next) {
-                updated = true;
+                const emojii = skillsMap[s];
 
-                builder
-                  .normal(' :: ')
-                  .normal(`${emojii} `)
-                  .colour(next.level, Colour.GREEN)
-                  .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
-              } else if (current?.xp !== next?.xp) {
-                updated = true;
+                if (!current && next) {
+                  updated = true;
 
-                const diff =
-                  Number(next?.xp.replaceAll(',', '')) -
-                  Number(current?.xp.replaceAll(',', '') ?? 0);
+                  builder
+                    .normal(' :: ')
+                    .normal(`${emojii} `)
+                    .colour(next.level, Colour.GREEN)
+                    .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
+                } else if (current?.xp !== next?.xp) {
+                  updated = true;
 
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const level = next!.level;
+                  const diff =
+                    Number(next?.xp.replaceAll(',', '')) -
+                    Number(current?.xp.replaceAll(',', '') ?? 0);
 
-                builder
-                  .normal(' :: ')
-                  .normal(`${emojii} `)
-                  .colour(level, Colour.GREEN)
-                  .colour(` (+${diff.toFixed(2)} XP) `, Colour.LIGHT_GREEN);
-              }
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  const level = next!.level;
+
+                  builder
+                    .normal(' :: ')
+                    .normal(`${emojii} `)
+                    .colour(level, Colour.GREEN)
+                    .colour(` (+${diff.toFixed(2)} XP) `, Colour.LIGHT_GREEN);
+                }
+              });
+
+              p.skills = newSkills;
+
+              this.clients.forEach((c) => {
+                if (updated) {
+                  c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
+                }
+              });
+
+              p.save();
             });
-
-            p.skills = newSkills;
-
-            this.clients.forEach((c) => {
-              if (updated) {
-                c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
-              }
-            });
-
-            p.save();
-          });
-      }, 10 * 1000);
+        },
+        30 * 60 * 1000,
+      );
     });
   }
 }
