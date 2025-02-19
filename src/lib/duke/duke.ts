@@ -80,7 +80,7 @@ export class Duke {
 
       schedule.scheduleJob(
         {
-          minute: 14,
+          minute: 31,
         },
         () => this.fetchAndSendUsers(),
       );
