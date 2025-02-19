@@ -10,6 +10,7 @@ import { RegisterHandler } from './handlers/register.js';
 import { playerModel } from '../database/models/player.model.js';
 import { Colour, FormattingBuilder } from '../irc/formatting.js';
 import { SourceHandler } from './handlers/source.js';
+import schedule from 'node-schedule';
 
 export interface CommandHandler {
   match(duke: Duke, command: PrivmsgCommand): Promise<boolean>;
@@ -77,7 +78,10 @@ export class Duke {
 
       await c.connect();
 
-      setInterval(
+      schedule.scheduleJob(
+        {
+          minute: 31,
+        },
         async () => {
           const playerModel_ = playerModel(mongoose);
 
@@ -175,7 +179,6 @@ export class Duke {
               p.save();
             });
         },
-        30 * 60 * 1000,
       );
     });
   }
