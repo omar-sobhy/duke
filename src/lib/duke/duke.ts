@@ -128,7 +128,11 @@ export class Duke {
           Crafting: '⚒️',
           Smithing: '🔨',
           Mining: '⛏️',
-          Runecrafting: '🔁',
+          Runecrafting: '⚡',
+          Fletching: '🔁',
+          Agility: '🏃',
+          Herblore: '🌿',
+          Thieving: '💰',
         };
 
         let updated = false;

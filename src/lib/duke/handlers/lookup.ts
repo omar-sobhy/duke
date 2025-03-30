@@ -1,36 +1,27 @@
-import * as cheerio from 'cheerio';
 import { Err, Ok, Result } from '../../../types/result.type.js';
 import { Player } from '../../database/models/player.model.js';
 import { CommandHandler, Duke } from '../duke.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import { Colour, FormattingBuilder } from '../../irc/formatting.js';
-
-const selector =
-  'body > table > tbody > tr > td > center > div > table:nth-child(2) > tbody > tr > td > center > table:nth-child(6) > tbody > tr > td > p > table > tbody > tr:not(:first-child)';
+import { Skills } from '../../../types/skills.type.js';
 
 export async function lookup(name: string): Promise<Result<Player>> {
   try {
-    const url = `https://2004.lostcity.rs/hiscores/player/${name}`;
+    const url = `https://2004.lostcity.rs/api/hiscores/player/${name}`;
+    const response = await fetch(url);
+    const data: {
+      type: number;
+      level: number;
+      value: number;
+      date: string;
+      rank: number;
+    }[] = await response.json();
 
-    const $ = await cheerio.fromURL(url);
-
-    if ($.text().includes('No player')) {
-      return Err('Player not found');
-    }
-
-    const rows = $(selector);
-
-    const skills = Array.from(rows).map((row) => {
-      const columns = $('td', row);
-
-      const skillName = $('a', columns[2]).text().trim();
-      const level = $(columns[4]).text().trim();
-      const xp = $(columns[5]).text().trim();
-
+    const skills = data.map((skill) => {
       return {
-        skillName,
-        level,
-        xp,
+        skillName: Skills[skill.type],
+        level: skill.level.toString(),
+        xp: skill.value.toString(),
       };
     });
 
@@ -39,12 +30,12 @@ export async function lookup(name: string): Promise<Result<Player>> {
       skills,
     });
   } catch {
-    return Err('');
     // TODO
+    return Err('');
   }
 }
 
-export function formatPlayerSkills(player: Player) {
+export function formatPlayerSkills(player: Player): string {
   const { name, skills } = player;
 
   const reply = new FormattingBuilder('')
@@ -67,7 +58,11 @@ export function formatPlayerSkills(player: Player) {
     Crafting: '⚒️',
     Smithing: '🔨',
     Mining: '⛏️',
-    Runecrafting: '🔁',
+    Runecrafting: '⚡',
+    Fletching: '🔁',
+    Agility: '🏃',
+    Herblore: '🌿',
+    Thieving: '💰',
   };
 
   skills.forEach((s) => {
