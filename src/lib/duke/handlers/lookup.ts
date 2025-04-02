@@ -59,7 +59,7 @@ export function formatPlayerSkills(player: Player): string {
     Smithing: '🔨',
     Mining: '⛏️',
     Runecrafting: '⚡',
-    Fletching: '🔁',
+    Fletching: '🪶',
     Agility: '🏃',
     Herblore: '🌿',
     Thieving: '💰',

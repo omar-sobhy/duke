@@ -129,7 +129,7 @@ export class Duke {
           Smithing: '🔨',
           Mining: '⛏️',
           Runecrafting: '⚡',
-          Fletching: '🔁',
+          Fletching: '🪶',
           Agility: '🏃',
           Herblore: '🌿',
           Thieving: '💰',
