@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+    networks:
+      - duke
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongo:6.0.7
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - duke
+volumes:
+  mongodb:
+networks:
+  duke:
