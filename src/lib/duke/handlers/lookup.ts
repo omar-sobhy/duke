@@ -21,7 +21,7 @@ export async function lookup(name: string): Promise<Result<Player>> {
       return {
         skillName: Skills[skill.type],
         level: skill.level.toString(),
-        xp: (skill.value / 10).toString(),
+        xp: (skill.value / 10).toFixed(),
       };
     });
 
