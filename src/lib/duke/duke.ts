@@ -170,7 +170,7 @@ export class Duke {
               .normal(' :: ')
               .normal(`${emojii} `)
               .colour(level, Colour.GREEN)
-              .colour(` (+${diff.toFixed(2)} XP) `, Colour.LIGHT_GREEN);
+              .colour(` (+${diff.toFixed()} XP) `, Colour.LIGHT_GREEN);
           }
         });
 
