@@ -10,8 +10,6 @@ services:
     image: mongo:6.0.7
     volumes:
       - mongodb:/data/db
-    ports:
-      - "27018:27017"
     networks:
       - duke
 volumes:
