@@ -14,6 +14,7 @@ import { SourceHandler } from './handlers/source.js';
 import schedule from 'node-schedule';
 import { CommandHandler } from './handlers/CommandHandler.js';
 import { ChatHandler } from './handlers/chat.js';
+import { HelpHandler } from './handlers/help.js';
 
 export interface DukeConfig extends RootConfig {
   database: Mongoose;
@@ -37,6 +38,7 @@ export class Duke {
       RegisterHandler,
       SourceHandler,
       ChatHandler,
+      HelpHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
