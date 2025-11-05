@@ -29,8 +29,14 @@ export class Privmsg {
   public async reply(text: string): Promise<Result> {
     const messages = text.split('\n');
 
-    for (const line of messages)
-      await this.client.writeRaw(`PRIVMSG ${this.target} :${line}`);
+    for (const line of messages) {
+      const sublines = line.match(/.{1,256}/g);
+      if (sublines) {
+        for (const subline of sublines) {
+          await this.client.writeRaw(`PRIVMSG ${this.target} :${subline}`);
+        }
+      }
+    }
 
     return Ok();
   }

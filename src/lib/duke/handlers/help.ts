@@ -15,7 +15,12 @@ export class HelpHandler extends CommandHandler {
   }
 
   async handle(duke: Duke, command: PrivmsgCommand): Promise<void> {
-    const commandName = command.command.toLowerCase();
+    if (command.params.length === 0) {
+      await command.privmsg.reply(this.help());
+      return;
+    }
+
+    const commandName = command.params[0].toLowerCase();
 
     const selectedCommand = duke.commandHandlers.find(
       (h) => h.commandName === commandName,
@@ -28,5 +33,7 @@ export class HelpHandler extends CommandHandler {
 
       return;
     }
+
+    await command.privmsg.reply(selectedCommand.help());
   }
 }

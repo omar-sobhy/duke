@@ -80,7 +80,7 @@ export class ChatHandler extends CommandHandler {
         { role: 'user', content: m.input },
         {
           role: 'assistant',
-          content: m.output.content,
+          content: m.output.content.substring(0, 256 * 3),
           status: 'completed',
           id: m.output.id,
           reasoningDetails: m.output.reasoningDetails,
