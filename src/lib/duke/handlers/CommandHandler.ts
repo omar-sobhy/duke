@@ -1,5 +1,5 @@
-import type { Duke } from '../duke';
-import { PrivmsgCommand } from '../privmsgCommand';
+import type { Duke } from '../duke.js';
+import { PrivmsgCommand } from '../privmsgCommand.js';
 
 export abstract class CommandHandler {
   /**

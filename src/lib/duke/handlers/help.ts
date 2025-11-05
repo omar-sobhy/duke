@@ -1,6 +1,6 @@
-import { Duke } from '../duke';
-import { CommandHandler } from './CommandHandler';
-import { PrivmsgCommand } from '../privmsgCommand';
+import { Duke } from '../duke.js';
+import { CommandHandler } from './CommandHandler.js';
+import { PrivmsgCommand } from '../privmsgCommand.js';
 
 export class HelpHandler extends CommandHandler {
   help(): string {
