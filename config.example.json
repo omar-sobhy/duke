@@ -14,5 +14,6 @@
         }
     ],
     "privmsgCommandPrefix": "!",
-    "databaseHost": "mongodb://localhost:27017/duke"
+    "databaseHost": "mongodb://localhost:27017/duke",
+    "openRouterKey": "<really long key>"
 }

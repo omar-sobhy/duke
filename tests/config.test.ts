@@ -13,6 +13,7 @@ const config: RootConfig = {
   ],
   privmsgCommandPrefix: '!',
   databaseHost: 'something',
+  openRouterKey: 'key',
 };
 
 describe('config parsing', () => {

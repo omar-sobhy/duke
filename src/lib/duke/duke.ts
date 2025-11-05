@@ -1,4 +1,5 @@
 import mongoose, { Mongoose } from 'mongoose';
+import { OpenRouter } from '@openrouter/sdk';
 import { Client } from '../irc/framework/client.js';
 import { Commands } from '../irc/framework/commands.js';
 import { Message } from '../irc/framework/message/message.js';
@@ -26,6 +27,8 @@ export class Duke {
 
   private commandHandlers: CommandHandler[] = [];
 
+  public readonly openRouter: OpenRouter | null = null;
+
   constructor(public readonly config: DukeConfig) {
     this.clients = config.clients.map((c) => {
       return new Client(c);
@@ -34,6 +37,10 @@ export class Duke {
     this.commandHandlers = [LookupHandler, RegisterHandler, SourceHandler].map(
       (h) => new h(),
     );
+
+    this.openRouter = new OpenRouter({
+      apiKey: this.config.openRouterKey,
+    });
   }
 
   public async connect() {

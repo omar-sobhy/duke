@@ -19,6 +19,7 @@ export interface RootConfig {
   clients: ClientConfig[];
   privmsgCommandPrefix: string;
   databaseHost: string;
+  openRouterKey: string;
 }
 
 export const configSchema = Joi.object<RootConfig>({
@@ -45,4 +46,5 @@ export const configSchema = Joi.object<RootConfig>({
   ),
   privmsgCommandPrefix: Joi.string().min(1).default('!'),
   databaseHost: Joi.string().required(),
+  openRouterKey: Joi.string().required(),
 });
