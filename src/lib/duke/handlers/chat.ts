@@ -93,6 +93,7 @@ export class ChatHandler extends CommandHandler {
       const completion = await duke.openRouter.chat.send({
         model: 'openrouter/auto',
         messages,
+        maxCompletionTokens: 1024,
       });
 
       const content = completion.choices[0].message.content;
