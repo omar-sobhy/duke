@@ -1,10 +1,11 @@
 import { Err, Ok, Result } from '../../../types/result.type.js';
 import { Player } from '../../database/models/player.model.js';
-import { CommandHandler, Duke } from '../duke.js';
+import { Duke } from '../duke.js';
+import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import { Colour, FormattingBuilder } from '../../irc/formatting.js';
-import { Skills } from '../../../types/skills.type.js';
 import * as cheerio from 'cheerio';
+// import { Skills } from '../../../types/skills.type.js';
 
 // hiscores API is being redone
 
@@ -118,9 +119,17 @@ export function formatPlayerSkills(player: Player): string {
   return reply.text;
 }
 
-export class LookupHandler implements CommandHandler {
+export class LookupHandler extends CommandHandler {
+  help(): string {
+    const p = this.duke.config.privmsgCommandPrefix;
+
+    return `Looks up a player's skills. Usage: ${p}lookup <user>.`;
+  }
+
+  public readonly commandName = 'lookup';
+
   async match(duke: Duke, command: PrivmsgCommand): Promise<boolean> {
-    return command.command.toLowerCase() === 'lookup';
+    return command.command.toLowerCase() === this.commandName;
   }
 
   async handle(duke: Duke, command: PrivmsgCommand): Promise<void> {

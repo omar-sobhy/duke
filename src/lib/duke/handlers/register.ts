@@ -1,14 +1,23 @@
 import mongoose from 'mongoose';
 import { Player, playerModel } from '../../database/models/player.model.js';
-import { CommandHandler, Duke } from '../duke.js';
+import { Duke } from '../duke.js';
+import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import { formatPlayerSkills, lookup } from './lookup.js';
 import { Err, Result } from '../../../types/result.type.js';
 import { ircUserModel } from '../../database/models/ircuser.model.js';
 
-export class RegisterHandler implements CommandHandler {
+export class RegisterHandler extends CommandHandler {
+  help(): string {
+    const p = this.duke.config.privmsgCommandPrefix;
+
+    return `Registers your in-game username with your IRC nickname. Usage: ${p}register <username>.`;
+  }
+
+  public readonly commandName = 'register';
+
   async match(duke: Duke, command: PrivmsgCommand): Promise<boolean> {
-    return command.command.toLowerCase() === 'register';
+    return command.command.toLowerCase() === this.commandName;
   }
 
   async handle(duke: Duke, command: PrivmsgCommand): Promise<void> {

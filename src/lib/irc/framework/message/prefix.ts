@@ -33,7 +33,7 @@ export class Prefix {
       const [nickname, user] = rest.split('!');
       return new Prefix({
         nickname,
-        user,
+        user, // TODO users prefixed with ~ aren't running identd?
         host,
       });
     }

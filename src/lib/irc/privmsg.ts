@@ -27,7 +27,10 @@ export class Privmsg {
   }
 
   public async reply(text: string): Promise<Result> {
-    this.client.writeRaw(`PRIVMSG ${this.target} :${text}`);
+    const messages = text.split('\n');
+
+    for (const line of messages)
+      await this.client.writeRaw(`PRIVMSG ${this.target} :${line}`);
 
     return Ok();
   }

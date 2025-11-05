@@ -1,12 +1,26 @@
 import { AssistantMessage, UserMessage } from '@openrouter/sdk/esm/models';
-import { chatContextModel } from '../../database/models/chatcontext.model';
-import { CommandHandler, Duke } from '../duke';
-import { PrivmsgCommand } from '../privmsgCommand';
+import { chatContextModel } from '../../database/models/chatcontext.model.js';
+import { Duke } from '../duke.js';
+import { CommandHandler } from './CommandHandler.js';
+import { PrivmsgCommand } from '../privmsgCommand.js';
 import yargs from 'yargs';
 
-export class ChatHandler implements CommandHandler {
+export class ChatHandler extends CommandHandler {
+  public readonly commandName = 'chat';
+
+  help(): string {
+    const p = this.duke.config.privmsgCommandPrefix;
+
+    return (
+      `Chat with the AI model. Usage: ${p}` +
+      `chat [--clear|-c] [--name|-n <context name>] <message>.\n` +
+      `--clear: Clears the chat context.\n` +
+      `--name: Uses or creates a named channel-wide chat context.`
+    );
+  }
+
   async match(duke: Duke, command: PrivmsgCommand): Promise<boolean> {
-    return command.command === 'chat';
+    return command.command.toLowerCase() === this.commandName;
   }
 
   async handle(duke: Duke, command: PrivmsgCommand): Promise<void> {
@@ -39,20 +53,21 @@ export class ChatHandler implements CommandHandler {
     } else {
       chatContext = await _chatContextModel.findOne({
         type: 'user',
-        identifier: command.privmsg.sender.user,
+        identifier: command.privmsg.sender.nickname,
       });
     }
 
     if (!chatContext) {
       chatContext = await _chatContextModel.create({
         type: args.n ? 'channel' : 'user',
-        identifier: args.n ? args.n : command.privmsg.sender.user,
+        identifier: args.n ? args.n : command.privmsg.sender.nickname,
         messages: [],
       });
     }
 
     if (args.c) {
-      await _chatContextModel.deleteOne({ _id: chatContext._id });
+      chatContext.messages = [];
+      await chatContext.save();
 
       await command.privmsg.reply('Chat context cleared.');
     }
@@ -69,28 +84,35 @@ export class ChatHandler implements CommandHandler {
         },
       ]);
 
-    messages.push({ role: 'user', content: command.privmsg.text });
+    messages.push({ role: 'user', content: args._.join(' ') });
 
-    const completion = await duke.openRouter.chat.send({
-      model: 'openrouter/auto',
-      messages,
-    });
-
-    const content = completion.choices[0].message.content;
-    if (typeof content === 'string') {
-      await command.privmsg.reply(content);
-
-      chatContext.messages.push({
-        input: command.privmsg.text,
-        output: {
-          id: completion.id,
-          content: content,
-          reasoningDetails: 'Response generated using openrouter/auto model.',
-        },
+    try {
+      const completion = await duke.openRouter.chat.send({
+        model: 'openrouter/auto',
+        messages,
       });
-      await chatContext.save();
-    } else {
-      await command.privmsg.reply('Error: received non-text content response.');
+
+      const content = completion.choices[0].message.content;
+      if (typeof content === 'string') {
+        await command.privmsg.reply(content);
+
+        chatContext.messages.push({
+          input: command.params.join(' '),
+          output: {
+            id: completion.id,
+            content: content,
+            reasoningDetails: 'Response generated using openrouter/auto model.',
+          },
+        });
+        await chatContext.save();
+      } else {
+        await command.privmsg.reply(
+          'Error: received non-text content response.',
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      await command.privmsg.reply('An OpenRouter error occurred.');
     }
   }
 }

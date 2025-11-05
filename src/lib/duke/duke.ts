@@ -12,11 +12,8 @@ import { playerModel } from '../database/models/player.model.js';
 import { Colour, FormattingBuilder } from '../irc/formatting.js';
 import { SourceHandler } from './handlers/source.js';
 import schedule from 'node-schedule';
-
-export interface CommandHandler {
-  match(duke: Duke, command: PrivmsgCommand): Promise<boolean>;
-  handle(duke: Duke, command: PrivmsgCommand): Promise<void>;
-}
+import { CommandHandler } from './handlers/CommandHandler.js';
+import { ChatHandler } from './handlers/chat.js';
 
 export interface DukeConfig extends RootConfig {
   database: Mongoose;
@@ -25,7 +22,7 @@ export interface DukeConfig extends RootConfig {
 export class Duke {
   public clients: Client[];
 
-  private commandHandlers: CommandHandler[] = [];
+  public readonly commandHandlers: CommandHandler[] = [];
 
   public readonly openRouter: OpenRouter | null = null;
 
@@ -34,9 +31,13 @@ export class Duke {
       return new Client(c);
     });
 
-    this.commandHandlers = [LookupHandler, RegisterHandler, SourceHandler].map(
-      (h) => new h(),
-    );
+    // TODO refactor to dynamic import
+    this.commandHandlers = [
+      LookupHandler,
+      RegisterHandler,
+      SourceHandler,
+      ChatHandler,
+    ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
       apiKey: this.config.openRouterKey,

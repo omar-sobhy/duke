@@ -15,6 +15,7 @@ export interface ChatContext {
 
 export const chatContextSchema = new Schema<ChatContext>({
   identifier: String,
+  type: String,
   messages: [
     {
       input: String,
