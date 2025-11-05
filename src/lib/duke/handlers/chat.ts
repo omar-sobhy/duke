@@ -40,6 +40,9 @@ export class ChatHandler extends CommandHandler {
           type: 'string',
         },
       })
+      .parserConfiguration({
+        'halt-at-non-option': true,
+      })
       .parse();
 
     const _chatContextModel = chatContextModel(duke.config.database);
