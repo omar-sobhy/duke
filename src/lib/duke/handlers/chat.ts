@@ -111,20 +111,38 @@ export class ChatHandler extends CommandHandler {
       const completion = await duke.openRouter.chat.send({
         model: 'openrouter/auto',
         messages,
+        maxCompletionTokens: 256,
       });
 
-      const content = completion.choices[0].message.content;
+      const choice = completion.choices[0];
+
+      const content = choice.message.content;
+
       if (typeof content === 'string') {
         await command.privmsg.reply(content.substring(0, 256 * 3));
 
-        chatContext.messages.push({
-          input: command.params.join(' '),
-          output: {
-            id: completion.id,
-            content: content,
-            reasoningDetails: 'Response generated using openrouter/auto model.',
-          },
-        });
+        if (choice.finishReason === 'length') {
+          const index = chatContext.messages.length - 2;
+          if (index >= 0) {
+            chatContext.messages[index].output.content += content;
+          } else {
+            chatContext.messages.push({
+              input: command.params.join(' '),
+              output: {
+                content: content,
+                finished: choice.finishReason === 'length',
+              },
+            });
+          }
+        } else if (choice.finishReason === 'stop') {
+          const index = chatContext.messages.length - 2;
+
+          if (index >= 0) {
+            chatContext.messages[index].output.content += content;
+            chatContext.messages[index].output.finished = true;
+          }
+        }
+
         await chatContext.save();
       } else {
         await command.privmsg.reply(

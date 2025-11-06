@@ -6,9 +6,8 @@ export interface ChatContext {
   messages: {
     input: string;
     output: {
-      id: string;
       content: string;
-      reasoningDetails: string;
+      finished: boolean;
     };
   }[];
 }
@@ -20,9 +19,8 @@ export const chatContextSchema = new Schema<ChatContext>({
     {
       input: String,
       output: {
-        id: String,
         content: String,
-        reasoningDetails: String,
+        finished: Boolean,
       },
     },
   ],
