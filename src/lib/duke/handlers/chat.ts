@@ -80,7 +80,11 @@ export class ChatHandler extends CommandHandler {
     }
 
     const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
-      { role: 'system', content: '' },
+      {
+        role: 'system',
+        content:
+          'You are an IRC bot. Be concise with your answers. Limit responses to less than 512 characters.',
+      },
     ];
 
     chatContext.messages.forEach((m) => {
@@ -97,7 +101,6 @@ export class ChatHandler extends CommandHandler {
       const completion = await duke.openRouter.chat.send({
         model: 'openrouter/auto',
         messages,
-        maxCompletionTokens: 64,
       });
 
       const content = completion.choices[0].message.content;
