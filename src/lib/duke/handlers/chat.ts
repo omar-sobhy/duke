@@ -84,9 +84,9 @@ export class ChatHandler extends CommandHandler {
         await command.privmsg.reply(
           `Usage: ${duke.config.privmsgCommandPrefix}chat [--clear|-c] [--name|-n <context name>] <message>.`,
         );
-
-        return;
       }
+
+      return;
     }
 
     const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
