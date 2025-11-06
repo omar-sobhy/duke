@@ -1,4 +1,8 @@
-import { AssistantMessage, UserMessage } from '@openrouter/sdk/esm/models';
+import {
+  SystemMessage,
+  AssistantMessage,
+  UserMessage,
+} from '@openrouter/sdk/esm/models';
 import { chatContextModel } from '../../database/models/chatcontext.model.js';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
@@ -75,17 +79,17 @@ export class ChatHandler extends CommandHandler {
       await command.privmsg.reply('Chat context cleared.');
     }
 
-    const messages: (UserMessage | AssistantMessage)[] =
-      chatContext.messages.flatMap((m) => [
-        { role: 'user', content: m.input },
-        {
-          role: 'assistant',
-          content: m.output.content,
-          status: 'completed',
-          id: m.output.id,
-          reasoningDetails: m.output.reasoningDetails,
-        },
-      ]);
+    const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
+      { role: 'system', content: '' },
+    ];
+
+    chatContext.messages.forEach((m) => {
+      messages.push({ role: 'user', content: m.input });
+      messages.push({
+        role: 'assistant',
+        content: m.output.content,
+      });
+    });
 
     messages.push({ role: 'user', content: args._.join(' ') });
 
