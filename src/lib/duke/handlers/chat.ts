@@ -80,7 +80,7 @@ export class ChatHandler extends CommandHandler {
         { role: 'user', content: m.input },
         {
           role: 'assistant',
-          content: m.output.content.substring(0, 256 * 3),
+          content: m.output.content,
           status: 'completed',
           id: m.output.id,
           reasoningDetails: m.output.reasoningDetails,
@@ -93,12 +93,12 @@ export class ChatHandler extends CommandHandler {
       const completion = await duke.openRouter.chat.send({
         model: 'openrouter/auto',
         messages,
-        maxCompletionTokens: 256,
+        maxCompletionTokens: 64,
       });
 
       const content = completion.choices[0].message.content;
       if (typeof content === 'string') {
-        await command.privmsg.reply(content);
+        await command.privmsg.reply(content.substring(0, 256 * 3));
 
         chatContext.messages.push({
           input: command.params.join(' '),
