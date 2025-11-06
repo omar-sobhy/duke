@@ -29,7 +29,7 @@ export class ChatHandler extends CommandHandler {
       return;
     }
 
-    const args = await yargs(command.privmsg.text)
+    const args = await yargs(command.params.join(' '))
       .options({
         c: {
           alias: 'clear',
