@@ -118,37 +118,29 @@ export class ChatHandler extends CommandHandler {
 
       const content = choice.message.content;
 
-      if (typeof content === 'string') {
-        await command.privmsg.reply(content.substring(0, 256 * 3));
-
-        if (choice.finishReason === 'length') {
-          const index = chatContext.messages.length - 2;
-          if (index >= 0) {
-            chatContext.messages[index].output.content += content;
-          } else {
-            chatContext.messages.push({
-              input: args._.join(' '),
-              output: {
-                content: content,
-                finished: choice.finishReason === 'length',
-              },
-            });
-          }
-        } else if (choice.finishReason === 'stop') {
-          const index = chatContext.messages.length - 2;
-
-          if (index >= 0) {
-            chatContext.messages[index].output.content += content;
-            chatContext.messages[index].output.finished = true;
-          }
-        }
-
-        await chatContext.save();
-      } else {
+      if (typeof content !== 'string') {
         await command.privmsg.reply(
           'Error: received non-text content response.',
         );
+        return;
       }
+
+      await command.privmsg.reply(content.substring(0, 256 * 3));
+
+      const index = chatContext.messages.length - 1;
+      if (index >= 0) {
+        chatContext.messages[index].output.content += content;
+      } else {
+        chatContext.messages.push({
+          input: args._.join(' '),
+          output: {
+            content: content,
+            finished: choice.finishReason === 'length',
+          },
+        });
+      }
+
+      await chatContext.save();
     } catch (error) {
       console.error(error);
       await command.privmsg.reply('An OpenRouter error occurred.');
