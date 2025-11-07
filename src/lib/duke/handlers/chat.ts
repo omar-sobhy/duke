@@ -10,6 +10,8 @@ import { PrivmsgCommand } from '../privmsgCommand.js';
 import yargs from 'yargs';
 
 export class ChatHandler extends CommandHandler {
+  private processing = new Set<string>();
+
   public readonly commandName = 'chat';
 
   help(): string {
@@ -51,18 +53,21 @@ export class ChatHandler extends CommandHandler {
 
     const _chatContextModel = chatContextModel(duke.config.database);
 
-    let chatContext;
-    if (args.n) {
-      chatContext = await _chatContextModel.findOne({
-        type: 'channel',
-        identifier: args.n,
-      });
-    } else {
-      chatContext = await _chatContextModel.findOne({
-        type: 'user',
-        identifier: command.privmsg.sender.nickname,
-      });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const identifier = args.n ? args.n : command.privmsg.sender.nickname!;
+
+    if (this.processing.has(identifier)) {
+      await command.privmsg.reply(
+        'A chat request is already being processed for this context. Please wait.',
+      );
+
+      return;
     }
+
+    let chatContext = await _chatContextModel.findOne({
+      type: args.n ? 'channel' : 'user',
+      identifier,
+    });
 
     if (!chatContext) {
       chatContext = await _chatContextModel.create({
@@ -108,11 +113,14 @@ export class ChatHandler extends CommandHandler {
     messages.push({ role: 'user', content: args._.join(' ') });
 
     try {
+      this.processing.add(identifier);
+
       const completion = await duke.openRouter.chat.send({
         model: 'openrouter/auto',
         messages,
-        maxCompletionTokens: 256,
       });
+
+      console.dir(completion);
 
       const choice = completion.choices[0];
 
@@ -122,28 +130,28 @@ export class ChatHandler extends CommandHandler {
         await command.privmsg.reply(
           'Error: received non-text content response.',
         );
+
+        this.processing.delete(identifier);
+
         return;
       }
 
       await command.privmsg.reply(content.substring(0, 256 * 3));
 
-      const index = chatContext.messages.length - 1;
-      if (index >= 0) {
-        chatContext.messages[index].output.content += content;
-      } else {
-        chatContext.messages.push({
-          input: args._.join(' '),
-          output: {
-            content: content,
-            finished: choice.finishReason === 'length',
-          },
-        });
-      }
+      chatContext.messages.push({
+        input: args._.join(' '),
+        output: {
+          content: content,
+          finished: choice.finishReason === 'length',
+        },
+      });
 
       await chatContext.save();
     } catch (error) {
       console.error(error);
       await command.privmsg.reply('An OpenRouter error occurred.');
     }
+
+    this.processing.delete(identifier);
   }
 }
