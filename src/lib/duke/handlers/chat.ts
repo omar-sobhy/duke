@@ -120,8 +120,6 @@ export class ChatHandler extends CommandHandler {
         messages,
       });
 
-      console.dir(completion);
-
       const choice = completion.choices[0];
 
       const content = choice.message.content;
