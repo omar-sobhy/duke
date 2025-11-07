@@ -30,7 +30,7 @@ export class Privmsg {
     const messages = text.split('\n');
 
     for (const line of messages) {
-      const sublines = line.match(/.{1,256}/g);
+      const sublines = line.match(/.{1,512}/g);
       if (sublines) {
         for (const subline of sublines) {
           await this.client.writeRaw(`PRIVMSG ${this.target} :${subline}`);
