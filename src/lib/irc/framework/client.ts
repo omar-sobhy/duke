@@ -10,6 +10,7 @@ import { Message } from './message/message.js';
 import { NumericReplies } from './message/numericReplies.js';
 import { Events } from './events.js';
 import { Commands } from './commands.js';
+import { Privmsg } from '../privmsg.js';
 
 export interface ClientOptions {
   host: string;
@@ -86,6 +87,25 @@ export class Client extends EventEmitter<Events> {
 
     this.socket = new Socket();
     this.socket.setEncoding('utf-8');
+
+    this.addListener('RawMessage', (message) => {
+      if (this.logging) {
+        console.log(`>>> ${message}`);
+      }
+
+      const parsedMessage = Message.parse(message, this);
+
+      if (parsedMessage.command === Commands.PRIVMSG) {
+        const privmsgResult = Privmsg.parse(parsedMessage, this);
+
+        if (privmsgResult.type === 'success') {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const privmsg = privmsgResult.data!;
+
+          this.emit('Privmsg', privmsg);
+        }
+      }
+    });
   }
 
   private user() {
@@ -276,5 +296,9 @@ export class Client extends EventEmitter<Events> {
 
   public async disconnect() {
     this.writeRaw('QUIT');
+  }
+
+  public getNickname(): string {
+    return this.nickname;
   }
 }
