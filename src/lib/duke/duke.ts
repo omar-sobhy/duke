@@ -1,8 +1,6 @@
 import mongoose, { Mongoose } from 'mongoose';
 import { OpenRouter } from '@openrouter/sdk';
 import { Client } from '../irc/framework/client.js';
-import { Commands } from '../irc/framework/commands.js';
-import { Message } from '../irc/framework/message/message.js';
 import { Privmsg } from '../irc/privmsg.js';
 import { RootConfig } from './config.js';
 import { lookup, LookupHandler } from './handlers/lookup.js';
@@ -51,40 +49,42 @@ export class Duke {
       c.on('RawMessage', (message) => {
         console.log(`<<< ${message}`);
 
-        const parsedMessage = Message.parse(message, c);
+        // const parsedMessage = Message.parse(message, c);
 
-        if (parsedMessage.command === Commands.PRIVMSG.toString()) {
-          const privmsgResult = Privmsg.parse(parsedMessage, c);
+        // if (parsedMessage.command === Commands.PRIVMSG.toString()) {
+        //   const privmsgResult = Privmsg.parse(parsedMessage, c);
 
-          if (privmsgResult.type === 'success') {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const privmsg = privmsgResult.data!;
+        //   if (privmsgResult.type === 'success') {
+        //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        //     const privmsg = privmsgResult.data!;
 
-            if (privmsg.text.startsWith(this.config.privmsgCommandPrefix)) {
-              const data = privmsg.text.split(' ');
+        //     if (privmsg.text.startsWith(this.config.privmsgCommandPrefix)) {
+        //       const data = privmsg.text.split(' ');
 
-              const command = data[0].substring(1);
-              const params = data.slice(1);
+        //       const command = data[0].substring(1);
+        //       const params = data.slice(1);
 
-              const privmsgCommand = new PrivmsgCommand(
-                privmsg,
-                command,
-                params,
-              );
+        //       const privmsgCommand = new PrivmsgCommand(
+        //         privmsg,
+        //         command,
+        //         params,
+        //       );
 
-              this.commandHandlers.forEach(async (h) => {
-                if (await h.match(this, privmsgCommand)) {
-                  h.handle(this, privmsgCommand);
-                }
-              });
-            }
-          }
-        }
+        //       this.commandHandlers.forEach(async (h) => {
+        //         if (await h.match(this, privmsgCommand)) {
+        //           h.handle(this, privmsgCommand);
+        //         }
+        //       });
+        //     }
+        //   }
+        // }
       });
 
       c.on('RawSend', (message) => {
         console.log(`>>> ${message}`);
       });
+
+      c.on('Privmsg', (p) => this.privmsgListener(p));
 
       await c.connect();
 
@@ -97,6 +97,52 @@ export class Duke {
 
       schedule.scheduleJob({ minute: 1 }, () => this.fetchAndSendUsers());
     });
+  }
+
+  private async privmsgListener(privmsg: Privmsg) {
+    const data = privmsg.text.split(' ');
+
+    const first = data[0].toLowerCase();
+    const prefix = this.config.privmsgCommandPrefix.toLowerCase();
+
+    const nickname = privmsg.client.getNickname().toLowerCase();
+
+    const regex = new RegExp(`^${nickname}[:,]?$`);
+
+    if (first.startsWith(prefix)) {
+      const command = data[0].substring(prefix.length);
+      const params = privmsg.text.substring(first.length).trim().split(/s+/);
+      if (params[0] === '') {
+        params.shift();
+      }
+
+      const privmsgCommand = new PrivmsgCommand(privmsg, command, params);
+
+      this.commandHandlers.forEach(async (h) => {
+        if (await h.match(this, privmsgCommand)) {
+          h.handle(this, privmsgCommand);
+        }
+      });
+
+      return;
+    }
+
+    const match = first.match(regex);
+    if (!match) {
+      return;
+    }
+
+    const command = 'chat';
+    const params = privmsg.text.substring(match[0].length).trim().split(/s+/);
+    if (params[0] === '') {
+      params.shift();
+    }
+
+    const privmsgCommand = new PrivmsgCommand(privmsg, command, params);
+
+    const handler = this.commandHandlers.find((h) => h.commandName === 'chat');
+
+    handler?.handle(this, privmsgCommand);
   }
 
   private async fetchAndSendUsers() {

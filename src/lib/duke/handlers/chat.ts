@@ -35,7 +35,19 @@ export class ChatHandler extends CommandHandler {
       return;
     }
 
-    const args = await yargs(command.params.join(' '))
+    // shitty code to get the right text excluding the command prefix
+    let text = command.privmsg.text;
+    if (text.startsWith(duke.config.privmsgCommandPrefix)) {
+      const prefix = `${duke.config.privmsgCommandPrefix}${this.commandName}`;
+      text = text.substring(prefix.length).trim();
+    } else {
+      text = text.substring(command.privmsg.client.getNickname().length);
+      if ([':', ','].includes(text.charAt(0))) {
+        text = text.substring(1).trim();
+      }
+    }
+
+    const args = await yargs(text)
       .options({
         c: {
           alias: 'clear',
