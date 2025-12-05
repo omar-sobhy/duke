@@ -146,12 +146,12 @@ export class ChatHandler extends CommandHandler {
         return;
       }
 
-      await command.privmsg.reply(content.substring(0, 256 * 3));
+      await command.privmsg.reply(content.trim().substring(0, 256 * 3));
 
       chatContext.messages.push({
         input: args._.join(' '),
         output: {
-          content: content,
+          content: content.trim(),
           finished: choice.finishReason === 'length',
         },
       });
