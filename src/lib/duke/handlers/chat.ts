@@ -66,7 +66,7 @@ export class ChatHandler extends CommandHandler {
     const _chatContextModel = chatContextModel(duke.config.database);
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const identifier = args.n ? args.n : command.privmsg.sender.nickname!;
+    const identifier = args.n ? args.n : command.privmsg.target;
 
     if (this.processing.has(identifier)) {
       await command.privmsg.reply(
@@ -77,14 +77,14 @@ export class ChatHandler extends CommandHandler {
     }
 
     let chatContext = await _chatContextModel.findOne({
-      type: args.n ? 'channel' : 'user',
+      type: 'channel',
       identifier,
     });
 
     if (!chatContext) {
       chatContext = await _chatContextModel.create({
-        type: args.n ? 'channel' : 'user',
-        identifier: args.n ? args.n : command.privmsg.sender.nickname,
+        type: 'channel',
+        identifier,
         messages: [],
       });
     }
