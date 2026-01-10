@@ -6,6 +6,7 @@ export interface ClientConfig {
   host: string;
   port: number;
   serverName: string;
+  throttleInterval: number;
   initialChannels?: { name: string; password?: string }[];
   username?: string;
   wallops?: boolean;
@@ -42,6 +43,7 @@ export const configSchema = Joi.object<RootConfig>({
       invisible: Joi.boolean().default(false),
       wallops: Joi.boolean().default(false),
       maxAutotryNextNickTries: Joi.number().min(1),
+      throttleInterval: Joi.number().min(1).default(200),
     }).required(),
   ),
   privmsgCommandPrefix: Joi.string().min(1).default('!'),

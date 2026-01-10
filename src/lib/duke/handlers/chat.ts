@@ -65,7 +65,6 @@ export class ChatHandler extends CommandHandler {
 
     const _chatContextModel = chatContextModel(duke.config.database);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const identifier = args.n ? args.n : command.privmsg.target;
 
     if (this.processing.has(identifier)) {

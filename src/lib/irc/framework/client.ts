@@ -11,25 +11,12 @@ import { NumericReplies } from './message/numericReplies.js';
 import { Events } from './events.js';
 import { Commands } from './commands.js';
 import { Privmsg } from '../privmsg.js';
-
-export interface ClientOptions {
-  host: string;
-  port: number;
-  logging?: boolean;
-  serverName: string;
-  nickname?: string;
-  username?: string;
-  wallops?: boolean;
-  invisible?: boolean;
-  realName?: string;
-  initialChannels?: { name: string; password?: string }[];
-  autotryNextNick?: boolean;
-  maxAutotryNextNickTries?: number;
-}
+import type { WriteRawOpts } from '../../../types/client/writeRawOpts.type.js';
+import type { ClientConfig } from '../../duke/config.js';
 
 const defaultOptions: Required<
   Pick<
-    ClientOptions,
+    ClientConfig,
     | 'logging'
     | 'initialChannels'
     | 'nickname'
@@ -64,6 +51,12 @@ export class Client extends EventEmitter<Events> {
 
   public channels: Channel[] = [];
 
+  private readonly queue: { data: string; writeRawOpts?: WriteRawOpts }[] = [];
+
+  private last: number = Date.now();
+
+  private sending = false;
+
   /**
    * Creates a new Client with the specified options
    *
@@ -74,8 +67,10 @@ export class Client extends EventEmitter<Events> {
    * `options.nickname`: Duke
    *
    * `options.channels`: []
+   *
+   * `options.throttleInterval`: 100
    */
-  constructor(private options: ClientOptions) {
+  constructor(private options: ClientConfig) {
     super();
 
     this.logging = options.logging ?? defaultOptions.logging;
@@ -106,6 +101,33 @@ export class Client extends EventEmitter<Events> {
         }
       }
     });
+
+    setInterval(() => {
+      if (this.sending) {
+        return;
+      }
+
+      this.sending = true;
+
+      const now = Date.now();
+
+      if (now - this.last < this.options.throttleInterval) {
+        this.sending = false;
+        return;
+      }
+
+      const next = this.queue.shift();
+
+      if (!next) {
+        this.sending = false;
+        return;
+      }
+
+      const opts = next.writeRawOpts ? { ...next.writeRawOpts } : { throttle: false };
+      opts.throttle = false;
+
+      this.writeRaw(next.data, next.writeRawOpts).then(() => (this.sending = false));
+    }, 50);
   }
 
   private user() {
@@ -119,9 +141,7 @@ export class Client extends EventEmitter<Events> {
       mode += 8;
     }
 
-    this.writeRaw(
-      `USER ${this.username ?? this.nickname} ${mode} * :${this.realName}`,
-    );
+    this.writeRaw(`USER ${this.username ?? this.nickname} ${mode} * :${this.realName}`);
   }
 
   /**
@@ -154,13 +174,9 @@ export class Client extends EventEmitter<Events> {
             const serverName = message.trailing;
 
             this.writeRaw(`PONG ${serverName}`);
-          } else if (
-            message.command === NumericReplies.RPL_WELCOME.toString()
-          ) {
-            const channelNames =
-              this.options.initialChannels?.map((c) => c.name) ?? [];
-            const passwords =
-              this.options.initialChannels?.map((c) => c.password) ?? [];
+          } else if (message.command === NumericReplies.RPL_WELCOME.toString()) {
+            const channelNames = this.options.initialChannels?.map((c) => c.name) ?? [];
+            const passwords = this.options.initialChannels?.map((c) => c.password) ?? [];
 
             this.join(channelNames, passwords);
           }
@@ -200,27 +216,31 @@ export class Client extends EventEmitter<Events> {
    *
    * @returns {Promise<this>} The client
    */
-  public async writeRaw(data: string, crlf = true): Promise<Result<this>> {
-    if (this.readline) {
-      this.emit('RawSend', data);
+  public async writeRaw(data: string, opts?: WriteRawOpts): Promise<Result<this>> {
+    const { crlf = true, throttle = false } = opts ?? {};
 
-      if (!data.endsWith('\r\n') && crlf) {
-        data = data + '\r\n';
-      }
+    if (!this.readline) {
+      return new NotConnectedError();
+    }
 
-      this.socket.write(data);
+    if (crlf && !data.endsWith('\r\n')) {
+      data += '\r\n';
+    }
+
+    if (throttle) {
+      this.queue.push({ data });
 
       return Ok(this);
     }
 
-    return new NotConnectedError();
+    this.socket.write(data);
+    this.emit('RawSend', data);
+    this.last = Date.now();
+
+    return Ok(this);
   }
 
-  private async _nick(
-    nickname: string,
-    initialConnect = false,
-    tries = 0,
-  ): Promise<Result<this>> {
+  private async _nick(nickname: string, initialConnect = false, tries = 0): Promise<Result<this>> {
     if (tries === this.options.maxAutotryNextNickTries) {
       return new NickError(nickname);
     }
@@ -268,26 +288,22 @@ export class Client extends EventEmitter<Events> {
 
   public async join(channelName: string, password?: string): Promise<void>;
 
-  public async join(
-    channelNames: string[],
-    passwords?: (string | undefined)[],
-  ): Promise<void>;
+  public async join(channelNames: string[], passwords?: (string | undefined)[]): Promise<void>;
 
-  public async join(
-    channelNames: string | string[],
-    passwords?: string | (string | undefined)[],
-  ) {
+  public async join(channelNames: string | string[], passwords?: string | (string | undefined)[]) {
     if (typeof channelNames === 'string') {
       if (passwords) {
-        this.writeRaw(`JOIN ${channelNames} ${passwords}`);
+        const passwordsArr = Array.isArray(passwords) ? passwords : [passwords];
+
+        this.writeRaw(`JOIN ${channelNames} ${passwordsArr.join(',')}`);
       } else {
         this.writeRaw(`JOIN ${channelNames}`);
       }
     } else {
       if (passwords) {
-        this.writeRaw(
-          `JOIN ${channelNames.join(',')} ${(passwords as (string | undefined)[]).join(',')}`,
-        );
+        const passwordsArr = Array.isArray(passwords) ? passwords : [passwords];
+
+        this.writeRaw(`JOIN ${channelNames.join(',')} ${passwordsArr.join(',')}`);
       } else {
         this.writeRaw(`JOIN ${channelNames.join(',')}`);
       }

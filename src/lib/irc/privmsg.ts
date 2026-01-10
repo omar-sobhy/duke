@@ -55,15 +55,7 @@ export class Privmsg {
       return Err('Attempted to parse malformed message into a Privmsg.');
     }
 
-    return Ok(
-      new Privmsg(
-        client,
-        message.prefix,
-        message.params[0],
-        message.trailing,
-        message,
-      ),
-    );
+    return Ok(new Privmsg(client, message.prefix, message.params[0], message.trailing, message));
   }
 
   public async reply(text: string): Promise<Result> {
@@ -79,7 +71,7 @@ export class Privmsg {
       const sublines = line.match(regex);
       if (sublines) {
         for (const subline of sublines) {
-          await this.client.writeRaw(`PRIVMSG ${this.target} :${subline}`);
+          await this.client.writeRaw(`PRIVMSG ${this.target} :${subline}`, { throttle: true });
         }
       }
     }
