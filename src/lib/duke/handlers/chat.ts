@@ -119,11 +119,13 @@ export class ChatHandler extends CommandHandler {
 
     const input = args._.join('_');
 
+    const continueRequested = input.toLowerCase().startsWith('continue');
+
     const last = chatContext.messages[chatContext.messages.length - 1];
-    if (input.toLowerCase().startsWith('continue') && last.output.finished) {
-      await command.privmsg.reply('');
+    if (continueRequested && last.output.finished) {
+      await command.privmsg.reply("There's nothing to continue for this context.");
       return;
-    } else if (!(last && !last.output.finished && input.toLowerCase().startsWith('continue'))) {
+    } else if (!continueRequested) {
       messages.push({ role: 'user', content: args._.join(' ') });
     }
 
@@ -131,7 +133,7 @@ export class ChatHandler extends CommandHandler {
       this.processing.add(identifier);
 
       const completion = await duke.openRouter.chat.send({
-        model: 'mistralai/mistral-small-3.1-24b-instruct',
+        model: 'openai/gpt-4.1-mini',
         messages,
         maxCompletionTokens: 100,
       });
@@ -155,8 +157,10 @@ export class ChatHandler extends CommandHandler {
           .substring(0, 256 * 3),
       );
 
+      console.dir(choice, { depth: Infinity });
+
       chatContext.messages.push({
-        input: args._.join(' '),
+        input,
         output: {
           content: content.trim(),
           finished: choice.finishReason === 'stop',
