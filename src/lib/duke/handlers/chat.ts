@@ -1,8 +1,4 @@
-import {
-  SystemMessage,
-  AssistantMessage,
-  UserMessage,
-} from '@openrouter/sdk/esm/models';
+import { SystemMessage, AssistantMessage, UserMessage } from '@openrouter/sdk/esm/models';
 import { chatContextModel } from '../../database/models/chatcontext.model.js';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
@@ -121,14 +117,23 @@ export class ChatHandler extends CommandHandler {
       });
     });
 
-    messages.push({ role: 'user', content: args._.join(' ') });
+    const input = args._.join('_');
+
+    const last = chatContext.messages[chatContext.messages.length - 1];
+    if (input.toLowerCase().startsWith('continue') && last.output.finished) {
+      await command.privmsg.reply('');
+      return;
+    } else if (!(last && !last.output.finished && input.toLowerCase().startsWith('continue'))) {
+      messages.push({ role: 'user', content: args._.join(' ') });
+    }
 
     try {
       this.processing.add(identifier);
 
       const completion = await duke.openRouter.chat.send({
-        model: 'openrouter/auto',
+        model: 'mistralai/mistral-small-3.1-24b-instruct',
         messages,
+        maxCompletionTokens: 100,
       });
 
       const choice = completion.choices[0];
@@ -136,22 +141,25 @@ export class ChatHandler extends CommandHandler {
       const content = choice.message.content;
 
       if (typeof content !== 'string') {
-        await command.privmsg.reply(
-          'Error: received non-text content response.',
-        );
+        await command.privmsg.reply('Error: received non-text content response.');
 
         this.processing.delete(identifier);
 
         return;
       }
 
-      await command.privmsg.reply(content.trim().substring(0, 256 * 3));
+      await command.privmsg.reply(
+        content
+          .trim()
+          .replaceAll('\n', ' ')
+          .substring(0, 256 * 3),
+      );
 
       chatContext.messages.push({
         input: args._.join(' '),
         output: {
           content: content.trim(),
-          finished: choice.finishReason === 'length',
+          finished: choice.finishReason === 'stop',
         },
       });
 
