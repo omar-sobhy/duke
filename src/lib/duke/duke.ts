@@ -9,10 +9,10 @@ import { RegisterHandler } from './handlers/register.js';
 import { playerModel } from '../database/models/player.model.js';
 import { Colour, FormattingBuilder } from '../irc/formatting.js';
 import { SourceHandler } from './handlers/source.js';
-import schedule from 'node-schedule';
 import { CommandHandler } from './handlers/CommandHandler.js';
 import { ChatHandler } from './handlers/chat.js';
 import { HelpHandler } from './handlers/help.js';
+import { PermissionHandler } from './handlers/permission.js';
 
 export interface DukeConfig extends RootConfig {
   database: Mongoose;
@@ -37,6 +37,7 @@ export class Duke {
       SourceHandler,
       ChatHandler,
       HelpHandler,
+      PermissionHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
@@ -48,36 +49,6 @@ export class Duke {
     this.clients.forEach(async (c) => {
       c.on('RawMessage', (message) => {
         console.log(`<<< ${message}`);
-
-        // const parsedMessage = Message.parse(message, c);
-
-        // if (parsedMessage.command === Commands.PRIVMSG.toString()) {
-        //   const privmsgResult = Privmsg.parse(parsedMessage, c);
-
-        //   if (privmsgResult.type === 'success') {
-        //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        //     const privmsg = privmsgResult.data!;
-
-        //     if (privmsg.text.startsWith(this.config.privmsgCommandPrefix)) {
-        //       const data = privmsg.text.split(' ');
-
-        //       const command = data[0].substring(1);
-        //       const params = data.slice(1);
-
-        //       const privmsgCommand = new PrivmsgCommand(
-        //         privmsg,
-        //         command,
-        //         params,
-        //       );
-
-        //       this.commandHandlers.forEach(async (h) => {
-        //         if (await h.match(this, privmsgCommand)) {
-        //           h.handle(this, privmsgCommand);
-        //         }
-        //       });
-        //     }
-        //   }
-        // }
       });
 
       c.on('RawSend', (message) => {
@@ -87,15 +58,6 @@ export class Duke {
       c.on('Privmsg', (p) => this.privmsgListener(p));
 
       await c.connect();
-
-      schedule.scheduleJob(
-        {
-          minute: 31,
-        },
-        () => this.fetchAndSendUsers(),
-      );
-
-      schedule.scheduleJob({ minute: 1 }, () => this.fetchAndSendUsers());
     });
   }
 
@@ -111,7 +73,7 @@ export class Duke {
 
     if (first.startsWith(prefix)) {
       const command = data[0].substring(prefix.length);
-      const params = privmsg.text.substring(first.length).trim().split(/s+/);
+      const params = privmsg.text.substring(first.length).trim().split(/\s+/);
       if (params[0] === '') {
         params.shift();
       }
@@ -120,6 +82,12 @@ export class Duke {
 
       this.commandHandlers.forEach(async (h) => {
         if (await h.match(this, privmsgCommand)) {
+          const permitted = await h.checkPermission(this, privmsgCommand);
+          if (!permitted) {
+            privmsgCommand.privmsg.reply('Insufficient permissions.');
+            return;
+          }
+
           h.handle(this, privmsgCommand);
         }
       });
@@ -162,7 +130,7 @@ export class Duke {
           return;
         }
 
-        console.log(`--- Fetched ${result.data?.name}`);
+        console.log(`--- Fetched ${result.data?.name} ---`);
 
         const currentSkills = p.skills;
 
@@ -196,9 +164,7 @@ export class Duke {
         const builder = new FormattingBuilder('').colour(p.name, Colour.RED);
 
         Object.keys(skillsMap).forEach((s) => {
-          const current = currentSkills.find(
-            (currentSkill) => currentSkill.skillName === s,
-          );
+          const current = currentSkills.find((currentSkill) => currentSkill.skillName === s);
 
           const next = newSkills.find((newSkill) => newSkill.skillName === s);
 
@@ -216,8 +182,7 @@ export class Duke {
             updated = true;
 
             const diff =
-              Number(next?.xp.replaceAll(',', '')) -
-              Number(current?.xp.replaceAll(',', '') ?? 0);
+              Number(next?.xp.replaceAll(',', '')) - Number(current?.xp.replaceAll(',', '') ?? 0);
 
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const level = next!.level;

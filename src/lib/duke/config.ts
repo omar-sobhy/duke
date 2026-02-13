@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import type { UserPermission } from '../database/models/userpermission.model.js';
 
 export interface ClientConfig {
   nickname: string;
@@ -14,6 +15,7 @@ export interface ClientConfig {
   realName?: string;
   autotryNextNick?: boolean;
   maxAutotryNextNickTries?: number;
+  initPermissions: Omit<UserPermission, 'serverName'>[];
 }
 
 export interface RootConfig {
@@ -21,6 +23,7 @@ export interface RootConfig {
   privmsgCommandPrefix: string;
   databaseHost: string;
   openRouterKey: string;
+  maxPermissionLevel: number;
 }
 
 export const configSchema = Joi.object<RootConfig>({
@@ -44,6 +47,14 @@ export const configSchema = Joi.object<RootConfig>({
       wallops: Joi.boolean().default(false),
       maxAutotryNextNickTries: Joi.number().min(1),
       throttleInterval: Joi.number().min(1).default(200),
+      initPermissions: Joi.array()
+        .items(
+          Joi.object<Omit<UserPermission, 'serverName'>>({
+            level: Joi.number().min(1).required().max(100),
+            mask: Joi.string().required(),
+          }),
+        )
+        .optional(),
     }).required(),
   ),
   privmsgCommandPrefix: Joi.string().min(1).default('!'),

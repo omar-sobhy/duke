@@ -39,7 +39,9 @@ const defaultOptions: Required<
  * Represents a client to a single IRC Server
  */
 export class Client extends EventEmitter<Events> {
+  public readonly serverName: string;
   public readonly socket: Socket;
+  
   private readline?: ReadLine;
 
   private readonly logging: boolean;
@@ -72,7 +74,9 @@ export class Client extends EventEmitter<Events> {
    */
   constructor(private options: ClientConfig) {
     super();
-
+    
+    this.serverName = options.serverName;
+    
     this.logging = options.logging ?? defaultOptions.logging;
     this.nickname = options.nickname ?? defaultOptions.nickname;
     this.username = options.username ?? this.nickname;

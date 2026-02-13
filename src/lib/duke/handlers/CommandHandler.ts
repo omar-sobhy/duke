@@ -1,13 +1,17 @@
 import type { Duke } from '../duke.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
+import { commandPermissionModel } from '../../database/models/commandpermission.model.js';
+import { userPermissionModel } from '../../database/models/userpermission.model.js';
 
 export abstract class CommandHandler {
+  admin = false;
+
   /**
    * Creates a new CommandHandler.
    *
    * @param duke The Duke instance.
    */
-  constructor(public readonly duke: Duke) {}
+  constructor(public readonly duke: Duke) { }
 
   /**
    * Returns a help string for the command.
@@ -43,4 +47,44 @@ export abstract class CommandHandler {
    * @param command The privmsg command to handle.
    */
   abstract handle(duke: Duke, command: PrivmsgCommand): Promise<void>;
+
+  /**
+   *
+   * Checks the permissions of the user aginst the command's required permissions.
+   *
+   * @param duke The Duke instance.
+   * @param command The privmsg command.
+   */
+  async checkPermission(duke: Duke, command: PrivmsgCommand): Promise<boolean> {
+    const _commandPermissionModel = commandPermissionModel(duke.config.database);
+    const _userPermissionModel = userPermissionModel(duke.config.database);
+
+    const permissions = await _commandPermissionModel.find({
+      command: command.command,
+    });
+
+    if (permissions.length === 0) {
+      return true;
+    }
+
+    const userPermission = await _userPermissionModel.findOne({
+      nick: command.privmsg.sender.nickname ?? '',
+    });
+
+    const maxLevel = duke.config.maxPermissionLevel;
+
+    const requiresAdmin = permissions.find((p) => p.level > maxLevel);
+
+    if (requiresAdmin && userPermission && userPermission.level < requiresAdmin.level) {
+      return false;
+    }
+
+    for (const p of permissions) {
+      if (p.nick === command.privmsg.sender.nickname) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
