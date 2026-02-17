@@ -54,7 +54,6 @@ export const configSchema = Joi.object<RootConfig>({
             mask: Joi.string().required(),
           }),
         )
-        .optional(),
     }).required(),
   ),
   privmsgCommandPrefix: Joi.string().min(1).default('!'),

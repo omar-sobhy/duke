@@ -36,7 +36,7 @@ export class Privmsg {
      * The raw message that was received
      */
     public readonly message: Message,
-  ) {}
+  ) { }
 
   /**
    * Attempts to parse a message into a Privmsg
@@ -67,11 +67,13 @@ export class Privmsg {
 
     const regex = new RegExp(`.{1,${maxMessageLength}}`, 'g');
 
+    const target = this.target === this.client.getNickname() ? this.sender.nickname : this.target;
+
     for (const line of messages) {
       const sublines = line.match(regex);
       if (sublines) {
         for (const subline of sublines) {
-          await this.client.writeRaw(`PRIVMSG ${this.target} :${subline}`, { throttle: true });
+          await this.client.writeRaw(`PRIVMSG ${target} :${subline}`, { throttle: true });
         }
       }
     }
