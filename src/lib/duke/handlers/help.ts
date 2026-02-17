@@ -5,7 +5,10 @@ import { PrivmsgCommand } from '../privmsgCommand.js';
 export class HelpHandler extends CommandHandler {
   help(): string {
     const p = this.duke.config.privmsgCommandPrefix;
-    return `Provides help information for commands. Usage: ${p}help [command].`;
+
+    const commands = this.duke.commandHandlers.map((h) => h.commandName).join(', ');
+
+    return `Available commands: ${commands}`;
   }
 
   public readonly commandName = 'help';

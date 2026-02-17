@@ -13,6 +13,8 @@ import { CommandHandler } from './handlers/CommandHandler.js';
 import { ChatHandler } from './handlers/chat.js';
 import { HelpHandler } from './handlers/help.js';
 import { PermissionHandler } from './handlers/permission.js';
+import schedule from 'node-schedule';
+import { RefreshHandler } from './handlers/refresh.js';
 
 export interface DukeConfig extends RootConfig {
   database: Mongoose;
@@ -38,6 +40,7 @@ export class Duke {
       ChatHandler,
       HelpHandler,
       PermissionHandler,
+      RefreshHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
@@ -59,6 +62,15 @@ export class Duke {
 
       await c.connect();
     });
+
+    schedule.scheduleJob(
+      {
+        minute: 31,
+      },
+      () => this.fetchAndSendUsers(),
+    );
+
+    schedule.scheduleJob({ minute: 1 }, () => this.fetchAndSendUsers());
   }
 
   private async privmsgListener(privmsg: Privmsg) {
@@ -113,7 +125,7 @@ export class Duke {
     handler?.handle(this, privmsgCommand);
   }
 
-  private async fetchAndSendUsers() {
+  public async fetchAndSendUsers() {
     const playerModel_ = playerModel(mongoose);
 
     const players = await playerModel_.find();

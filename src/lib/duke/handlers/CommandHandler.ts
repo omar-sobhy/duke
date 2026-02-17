@@ -1,10 +1,12 @@
 import type { Duke } from '../duke.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
-import { commandPermissionModel } from '../../database/models/commandpermission.model.js';
 import { userPermissionModel } from '../../database/models/userpermission.model.js';
+import wildcardMatch from 'wildcard-match';
 
 export abstract class CommandHandler {
-  admin = false;
+  permissionLevel(): number {
+    return 0;
+  }
 
   /**
    * Creates a new CommandHandler.
@@ -56,31 +58,20 @@ export abstract class CommandHandler {
    * @param command The privmsg command.
    */
   async checkPermission(duke: Duke, command: PrivmsgCommand): Promise<boolean> {
-    const _commandPermissionModel = commandPermissionModel(duke.config.database);
-    const _userPermissionModel = userPermissionModel(duke.config.database);
-
-    const permissions = await _commandPermissionModel.find({
-      command: command.command,
-    });
-
-    if (permissions.length === 0) {
+    if (this.permissionLevel() === 0) {
       return true;
     }
 
-    const userPermission = await _userPermissionModel.findOne({
-      nick: command.privmsg.sender.nickname ?? '',
-    });
+    const _userPermissionModel = userPermissionModel(duke.config.database);
 
-    const maxLevel = duke.config.maxPermissionLevel;
+    const permissions = await _userPermissionModel.find();
 
-    const requiresAdmin = permissions.find((p) => p.level > maxLevel);
-
-    if (requiresAdmin && userPermission && userPermission.level < requiresAdmin.level) {
-      return false;
-    }
+    const sender = command.privmsg.sender.toString().toLowerCase();
 
     for (const p of permissions) {
-      if (p.nick === command.privmsg.sender.nickname) {
+      const matches = wildcardMatch(p.mask.toLowerCase());
+
+      if (matches(sender) && p.level >= this.permissionLevel()) {
         return true;
       }
     }
