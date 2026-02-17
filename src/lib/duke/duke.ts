@@ -182,6 +182,10 @@ export class Duke {
 
           const emojii = skillsMap[s];
 
+          if (!next) {
+            return;
+          }
+
           if (!current && next) {
             updated = true;
 
@@ -190,14 +194,14 @@ export class Duke {
               .normal(`${emojii} `)
               .colour(next.level, Colour.GREEN)
               .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
-          } else if (current?.xp !== next?.xp) {
+          } else if (current?.xp !== next.xp) {
             updated = true;
 
             const diff =
-              Number(next?.xp.replaceAll(',', '')) - Number(current?.xp.replaceAll(',', '') ?? 0);
+              Number(next.xp.replaceAll(',', '')) - Number(current?.xp.replaceAll(',', '') ?? 0);
 
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const level = next!.level;
+            const level = next.level;
 
             builder
               .normal(' :: ')
