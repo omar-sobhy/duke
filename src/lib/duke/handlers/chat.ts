@@ -131,7 +131,9 @@ export class ChatHandler extends CommandHandler {
     } else if (continueRequested) {
       const nextContent = last.output[last.nextIndex];
 
-      await command.privmsg.reply(nextContent.trim());
+      const formatted = nextContent.split('\n').map(line => line.trim()).join(' ');
+
+      await command.privmsg.reply(formatted);
 
       last.nextIndex++;
 
