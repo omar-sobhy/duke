@@ -164,7 +164,7 @@ export class ChatHandler extends CommandHandler {
         return;
       }
 
-      const regex = new RegExp(`.{1,490}`, 'gs');
+      const regex = new RegExp(`.{1,400}`, 'gs');
 
       const output = content.match(regex);
 

@@ -41,7 +41,7 @@ const defaultOptions: Required<
 export class Client extends EventEmitter<Events> {
   public readonly serverName: string;
   public readonly socket: Socket;
-  
+
   private readline?: ReadLine;
 
   private readonly logging: boolean;
@@ -74,9 +74,9 @@ export class Client extends EventEmitter<Events> {
    */
   constructor(private options: ClientConfig) {
     super();
-    
+
     this.serverName = options.serverName;
-    
+
     this.logging = options.logging ?? defaultOptions.logging;
     this.nickname = options.nickname ?? defaultOptions.nickname;
     this.username = options.username ?? this.nickname;
@@ -216,7 +216,7 @@ export class Client extends EventEmitter<Events> {
   /**
    *
    * @param data The data to send to the server
-   * @param crlf Whether to ensure '\r\n' is sent (will not double-send if `data` already ends in crlf)
+   * @param opts.crlf Whether to ensure '\r\n' is sent (will not double-send if `data` already ends in crlf)
    *
    * @returns {Promise<this>} The client
    */
@@ -238,6 +238,7 @@ export class Client extends EventEmitter<Events> {
     }
 
     this.socket.write(data);
+
     this.emit('RawSend', data);
     this.last = Date.now();
 
