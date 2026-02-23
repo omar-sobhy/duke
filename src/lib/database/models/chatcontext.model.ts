@@ -4,11 +4,9 @@ export interface ChatContext {
   type: 'user' | 'channel';
   identifier: string;
   messages: {
+    nextIndex: number;
     input: string;
-    output: {
-      content: string;
-      finished: boolean;
-    };
+    output: string[];
   }[];
 }
 
@@ -17,11 +15,9 @@ export const chatContextSchema = new Schema<ChatContext>({
   type: String,
   messages: [
     {
+      nextIndex: Number,
       input: String,
-      output: {
-        content: String,
-        finished: Boolean,
-      },
+      output: [String],
     },
   ],
 });
