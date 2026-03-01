@@ -1,9 +1,9 @@
 import { SystemMessage, AssistantMessage, UserMessage } from '@openrouter/sdk/esm/models';
-import { chatContextModel } from '../../database/models/chatcontext.model.js';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import yargs from 'yargs';
+import type { ChatMessage } from '../../../types/database/chatmessage.database.type.js';
 
 export class ChatHandler extends CommandHandler {
   private processing = new Set<string>();
@@ -58,8 +58,6 @@ export class ChatHandler extends CommandHandler {
       .parserConfiguration({ 'halt-at-non-option': true })
       .parse();
 
-    const _chatContextModel = chatContextModel(duke.config.database);
-
     const identifier = args.n ? args.n : command.privmsg.target;
 
     if (this.processing.has(identifier)) {
@@ -70,128 +68,157 @@ export class ChatHandler extends CommandHandler {
       return;
     }
 
-    let chatContext = await _chatContextModel.findOne({
-      type: 'channel',
-      identifier,
-    });
-
-    if (!chatContext) {
-      chatContext = await _chatContextModel.create({
-        type: 'channel',
-        identifier,
-        messages: [],
-      });
-    }
-
-    if (args.c) {
-      chatContext.messages = [];
-      await chatContext.save();
-
-      await command.privmsg.reply('Chat context cleared.');
-    }
-
-    if (args._.length === 0) {
-      if (!args.c) {
-        await command.privmsg.reply(
-          `Usage: ${duke.config.privmsgCommandPrefix}chat [--clear|-c] [--name|-n <context name>] <message>.`,
-        );
-      }
-
-      return;
-    }
-
-    const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
-      {
-        role: 'system',
-        content:
-          'You are an IRC bot. Try to be helpful in your responses. If you do not know the answer to a question, say you do not know. Responses should be in pure plaintext -- do not use markdown or similar.',
-      },
-    ];
-
-    chatContext.messages.forEach((m) => {
-      messages.push({ role: 'user', content: m.input });
-
-      const previous = m.output.join('');
-
-      messages.push({
-        role: 'assistant',
-        content: previous,
-      });
-    });
-
-    const input = args._.join('_');
-
-    const continueRequested = input.toLowerCase().startsWith('continue');
-
-    const last = chatContext.messages[chatContext.messages.length - 1];
-    if (continueRequested && last.nextIndex === last.output.length) {
-      await command.privmsg.reply("There's nothing to continue for this context.");
-
-      return;
-    } else if (continueRequested) {
-      const nextContent = last.output[last.nextIndex];
-
-      const formatted = nextContent.split('\n').map(line => line.trim()).join(' ');
-
-      await command.privmsg.reply(formatted);
-
-      last.nextIndex++;
-
-      await chatContext.save();
-
-      return;
-    } else {
-      messages.push({ role: 'user', content: args._.join(' ') });
-    }
-
     try {
       this.processing.add(identifier);
 
-      const completion = await duke.openRouter.chat.send({
-        model: 'openai/gpt-4.1-mini',
-        messages,
-      });
+      let chatContext = await duke.config
+        .database('chatContexts')
+        .where({
+          type: 'channel',
+          identifier,
+        })
+        .first();
 
-      const choice = completion.choices[0];
+      if (!chatContext) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chatContext = (await duke.config.database('chatContexts').insert({
+          type: 'channel',
+          identifier,
+        }))!;
+      }
 
-      const content = choice.message.content;
+      if (args.c) {
+        await duke.config
+          .database('chatMessages')
+          .where({ contextIdentifier: chatContext.identifier })
+          .delete();
 
-      if (typeof content !== 'string') {
-        await command.privmsg.reply('Error: received non-text content response.');
+        await command.privmsg.reply('Chat context cleared.');
+      }
 
-        this.processing.delete(identifier);
+      if (args._.length === 0) {
+        if (!args.c) {
+          await command.privmsg.reply(
+            `Usage: ${duke.config.privmsgCommandPrefix}chat [--clear|-c] [--name|-n <context name>] <message>.`,
+          );
+        }
 
         return;
       }
 
-      const regex = new RegExp(`.{1,400}`, 'gs');
+      const previousMessages = await duke.config
+        .database('chatMessages')
+        .where({ contextIdentifier: chatContext.identifier })
+        .orderBy('id', 'asc');
 
-      const output = content.match(regex);
+      const input = args._.join('_');
 
-      if (!output) {
+      const continueRequested = input.toLowerCase().startsWith('continue');
+
+      if (continueRequested) {
+        const last = previousMessages[previousMessages.length - 1];
+
+        if (!last) {
+          await command.privmsg.reply("There's nothing to continue for this context.");
+
+          return;
+        }
+
+        const regex = new RegExp(`.{1,400}`, 'gs');
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const split = last.text.match(regex)!;
+
+        if (last.splitIndex === split.length) {
+          await command.privmsg.reply("There's nothing to continue for this context.");
+
+          return;
+        }
+
+        const nextContent = split[last.splitIndex];
+
+        const formatted = nextContent
+          .split('\n')
+          .map((line) => line.trim())
+          .join(' ');
+
+        await command.privmsg.reply(formatted);
+
+        await duke.config
+          .database('chatMessages')
+          .where({ id: last.id })
+          .update({ splitIndex: last.splitIndex + 1 });
+
+        return;
+      }
+
+      try {
+        const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
+          {
+            role: 'system',
+            content:
+              'You are an IRC bot. Try to be helpful in your responses. If you do not know the answer to a question, say you do not know. Responses should be in pure plaintext -- do not use markdown or similar.',
+          },
+        ];
+
+        previousMessages.forEach((m) => {
+          messages.push({ role: 'user', content: m.input });
+
+          messages.push({
+            role: 'assistant',
+            content: m.text,
+          });
+        });
+
+        messages.push({ role: 'user', content: args._.join(' ') });
+
+        const completion = await duke.openRouter.chat.send({
+          model: 'openai/gpt-4.1-mini',
+          messages,
+        });
+
+        const choice = completion.choices[0];
+
+        const content = choice.message.content;
+
+        if (typeof content !== 'string') {
+          await command.privmsg.reply('Error: received non-text content response.');
+
+          return;
+        }
+
+        const regex = new RegExp(`.{1,400}`, 'gs');
+
+        const output = content.match(regex);
+
+        if (!output) {
+          await command.privmsg.reply('An OpenRouter error occurred.');
+
+          return;
+        }
+
+        const first = output[0];
+
+        const formatted = first
+          .split('\n')
+          .map((line) => line.trim())
+          .join(' ');
+
+        await command.privmsg.reply(formatted);
+
+        await duke.config.database('chatMessages').insert({
+          contextIdentifier: chatContext.identifier,
+          input: args._.join(' '),
+          text: content,
+          splitIndex: 1,
+        });
+      } catch (error) {
+        console.error(error);
+
         await command.privmsg.reply('An OpenRouter error occurred.');
-        this.processing.delete(identifier);
-        return;
       }
-
-      const first = output[0];
-
-      const formatted = first.split('\n').map(line => line.trim()).join(' ');
-
-      await command.privmsg.reply(formatted);
-
-      chatContext.messages.push({
-        input,
-        nextIndex: 1,
-        output: output,
-      });
-
-      await chatContext.save();
-    } catch (error) {
-      console.error(error);
-      await command.privmsg.reply('An OpenRouter error occurred.');
+    } finally {
+      this.processing.delete(identifier);
     }
-
-    this.processing.delete(identifier);
   }
 }

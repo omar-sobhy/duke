@@ -1,19 +1,32 @@
 {
-    "clients": [
+  "clients": [
+    {
+      "host": "irc.rizon.net",
+      "port": 6660,
+      "logging": false,
+      "nickname": "Duke",
+      "serverName": "Rizon",
+      "initialChannels": [
         {
-            "host": "irc.rizon.net",
-            "port": 6660,
-            "logging": false,
-            "nickname": "Duke",
-            "serverName": "Rizon",
-            "initialChannels": [
-                {
-                    "name": "#duketest"
-                }
-            ]
+          "name": "#duketest"
         }
-    ],
-    "privmsgCommandPrefix": "!",
-    "databaseHost": "mongodb://localhost:27017/duke",
-    "openRouterKey": "<really long key>"
+      ],
+      "throttleInterval": 200,
+      "initPermissions": [
+        {
+          "level": 100,
+          "mask": "Admin!*@*"
+        }
+      ]
+    }
+  ],
+  "privmsgCommandPrefix": ",",
+  "databaseConfig": {
+    "user": "duke",
+    "password": "duke",
+    "host": "localhost",
+    "database": "duke",
+    "port": 5432
+  },
+  "openRouterKey": "<secret>"
 }

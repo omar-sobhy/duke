@@ -1,4 +1,3 @@
-import mongoose, { Mongoose } from 'mongoose';
 import { OpenRouter } from '@openrouter/sdk';
 import { Client } from '../irc/framework/client.js';
 import { Privmsg } from '../irc/privmsg.js';
@@ -6,7 +5,6 @@ import { RootConfig } from './config.js';
 import { lookup, LookupHandler } from './handlers/lookup.js';
 import { PrivmsgCommand } from './privmsgCommand.js';
 import { RegisterHandler } from './handlers/register.js';
-import { playerModel } from '../database/models/player.model.js';
 import { Colour, FormattingBuilder } from '../irc/formatting.js';
 import { SourceHandler } from './handlers/source.js';
 import { CommandHandler } from './handlers/CommandHandler.js';
@@ -15,9 +13,10 @@ import { HelpHandler } from './handlers/help.js';
 import { PermissionHandler } from './handlers/permission.js';
 import schedule from 'node-schedule';
 import { RefreshHandler } from './handlers/refresh.js';
+import { Knex } from 'knex';
 
 export interface DukeConfig extends RootConfig {
-  database: Mongoose;
+  database: Knex;
 }
 
 export class Duke {
@@ -126,100 +125,102 @@ export class Duke {
   }
 
   public async fetchAndSendUsers() {
-    const playerModel_ = playerModel(mongoose);
+    const transaction = await this.config.database.transaction();
 
-    const players = await playerModel_.find();
+    const players = await transaction('players').select('*');
 
-    console.log('--- Fetching...');
+    for (const player of players) {
+      const result = await lookup(player.name);
 
-    players
-      .filter((p) => !!p)
-      .forEach(async (p) => {
-        const result = await lookup(p.name);
+      if (result.type === 'error') {
+        console.error(result);
+        continue;
+      }
 
-        if (result.type === 'error') {
-          console.error(result);
+      console.log(`--- Fetched ${result.data?.name} ---`);
+
+      const skills = await transaction('skills').where('playerId', player.id).select('*');
+
+      const skillsMap: Record<string, string> = {
+        Attack: '⚔️',
+        Defence: '🛡️',
+        Strength: '💪',
+        Hitpoints: '♥️',
+        Ranged: '🏹',
+        Prayer: '⛪',
+        Magic: '🧙',
+        Cooking: '🍳',
+        Woodcutting: '🪓',
+        Fishing: '🐟',
+        Firemaking: '🔥',
+        Crafting: '⚒️',
+        Smithing: '🔨',
+        Mining: '⛏️',
+        Runecrafting: '⚡',
+        Fletching: '🪶',
+        Agility: '🏃',
+        Herblore: '🌿',
+        Thieving: '💰',
+      };
+
+      let updated = false;
+
+      const builder = new FormattingBuilder('').colour(player.name, Colour.RED);
+
+      Object.keys(skillsMap).forEach((s) => {
+        const currentSkill = skills.find((currentSkill) => currentSkill.skillName === s);
+
+        const next = result.data?.skills.find((newSkill) => newSkill.skillName === s);
+
+        if (!next) {
           return;
         }
 
-        console.log(`--- Fetched ${result.data?.name} ---`);
+        const emojii = skillsMap[s];
 
-        const currentSkills = p.skills;
+        if (!currentSkill) {
+          updated = true;
+          builder
+            .normal(' :: ')
+            .normal(`${emojii} `)
+            .colour(next.level, Colour.GREEN)
+            .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
+        } else if (currentSkill.xp !== next.xp) {
+          updated = true;
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const newSkills = result.data!.skills;
+          const diff =
+            Number(next.xp.replaceAll(',', '')) - Number(currentSkill.xp.replaceAll(',', '') ?? 0);
 
-        const skillsMap: Record<string, string> = {
-          Attack: '⚔️',
-          Defence: '🛡️',
-          Strength: '💪',
-          Hitpoints: '♥️',
-          Ranged: '🏹',
-          Prayer: '⛪',
-          Magic: '🧙',
-          Cooking: '🍳',
-          Woodcutting: '🪓',
-          Fishing: '🐟',
-          Firemaking: '🔥',
-          Crafting: '⚒️',
-          Smithing: '🔨',
-          Mining: '⛏️',
-          Runecrafting: '⚡',
-          Fletching: '🪶',
-          Agility: '🏃',
-          Herblore: '🌿',
-          Thieving: '💰',
-        };
+          const level = next.level;
 
-        let updated = false;
-
-        const builder = new FormattingBuilder('').colour(p.name, Colour.RED);
-
-        Object.keys(skillsMap).forEach((s) => {
-          const current = currentSkills.find((currentSkill) => currentSkill.skillName === s);
-
-          const next = newSkills.find((newSkill) => newSkill.skillName === s);
-
-          const emojii = skillsMap[s];
-
-          if (!next) {
-            return;
-          }
-
-          if (!current && next) {
-            updated = true;
-
-            builder
-              .normal(' :: ')
-              .normal(`${emojii} `)
-              .colour(next.level, Colour.GREEN)
-              .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
-          } else if (current?.xp !== next.xp) {
-            updated = true;
-
-            const diff =
-              Number(next.xp.replaceAll(',', '')) - Number(current?.xp.replaceAll(',', '') ?? 0);
-
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const level = next.level;
-
-            builder
-              .normal(' :: ')
-              .normal(`${emojii} `)
-              .colour(level, Colour.GREEN)
-              .colour(` (+${diff.toFixed()} XP) `, Colour.LIGHT_GREEN);
-          }
-        });
-
-        p.skills = newSkills;
-
-        this.clients.forEach((c) => {
-          if (updated) {
-            c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
-          }
-        });
-
-        p.save();
+          builder
+            .normal(' :: ')
+            .normal(`${emojii} `)
+            .colour(level, Colour.GREEN)
+            .colour(` (+${diff.toFixed()} XP) `, Colour.LIGHT_GREEN);
+        }
       });
+
+      for (const skill of result.data?.skills ?? []) {
+        await transaction('skills')
+          .insert({
+            playerId: player.id,
+            skillName: skill.skillName,
+            level: skill.level,
+            xp: skill.xp,
+          })
+          .onConflict(['playerId', 'skillName'])
+          .merge();
+      }
+
+      await transaction.commit();
+
+      this.clients.forEach((c) => {
+        if (updated) {
+          // TODO: don't hardcode channel
+          c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
+        }
+      });
+    }
   }
 }

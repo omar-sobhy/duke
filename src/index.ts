@@ -1,8 +1,7 @@
 import { Duke } from './lib/duke/duke.js';
 import { readFile } from 'node:fs/promises';
 import { configSchema } from './lib/duke/config.js';
-import { database } from './lib/database/index.js';
-import { userPermissionModel } from './lib/database/models/userpermission.model.js';
+import knex from 'knex';
 
 const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
@@ -12,19 +11,29 @@ if (config.error) {
   throw config.error;
 }
 
-const mongoose = await database(config.value.databaseHost);
-
-const model = userPermissionModel(mongoose);
+const database = knex({
+  client: 'pg',
+  connection: {
+    host: config.value.databaseConfig.host,
+    user: config.value.databaseConfig.user,
+    password: config.value.databaseConfig.password,
+    database: config.value.databaseConfig.database,
+    port: config.value.databaseConfig.port,
+    ssl: false,
+  },
+});
 
 for (const client of config.value.clients) {
   for (const permission of client.initPermissions) {
-    const existing = await model.findOne({
-      serverName: client.serverName,
-      mask: permission.mask.toLowerCase(),
-    });
+    const existing = await database('userPermissions')
+      .where({
+        serverName: client.serverName,
+        mask: permission.mask.toLowerCase(),
+      })
+      .first();
 
     if (!existing) {
-      await model.insertOne({
+      await database('userPermissions').insert({
         serverName: client.serverName,
         mask: permission.mask.toLowerCase(),
         level: permission.level,
@@ -33,6 +42,6 @@ for (const client of config.value.clients) {
   }
 }
 
-const duke = new Duke({ ...config.value, database: mongoose });
+const duke = new Duke({ ...config.value, database });
 
 duke.connect();

@@ -1,6 +1,5 @@
 import type { Duke } from '../duke.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
-import { userPermissionModel } from '../../database/models/userpermission.model.js';
 import wildcardMatch from 'wildcard-match';
 
 export abstract class CommandHandler {
@@ -62,9 +61,7 @@ export abstract class CommandHandler {
       return true;
     }
 
-    const _userPermissionModel = userPermissionModel(duke.config.database);
-
-    const permissions = await _userPermissionModel.find();
+    const permissions = await this.duke.config.database('userPermissions').select('*');
 
     const sender = command.privmsg.sender.toString().toLowerCase();
 

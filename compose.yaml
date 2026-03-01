@@ -5,14 +5,22 @@ services:
     networks:
       - duke
     depends_on:
-      - mongodb
-  mongodb:
-    image: mongo:6.0.7
+      - db
+    command:
+      - /bin/sh
+      - -c
+      - |
+        knex migrate:latest
+        npm run start
+  db:
+    image: postgres:18.3
     volumes:
-      - mongodb:/data/db
+      - db:/var/lib/postgresql
     networks:
       - duke
+    env_file:
+      - .env
 volumes:
-  mongodb:
+  db:
 networks:
   duke:

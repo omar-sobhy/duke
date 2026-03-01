@@ -3,3 +3,4 @@ node_modules
 tsconfig.tsbuildinfo
 config.json
 compose.override.yaml
+.env

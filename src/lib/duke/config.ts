@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import type { UserPermission } from '../database/models/userpermission.model.js';
+import type { UserPermission } from '../../types/database/userpermission.database.type.js';
 
 export interface ClientConfig {
   nickname: string;
@@ -21,7 +21,13 @@ export interface ClientConfig {
 export interface RootConfig {
   clients: ClientConfig[];
   privmsgCommandPrefix: string;
-  databaseHost: string;
+  databaseConfig: {
+    user: string;
+    password: string;
+    host: string;
+    port: number;
+    database: string;
+  };
   openRouterKey: string;
   maxPermissionLevel: number;
 }
@@ -57,6 +63,12 @@ export const configSchema = Joi.object<RootConfig>({
     }).required(),
   ),
   privmsgCommandPrefix: Joi.string().min(1).default('!'),
-  databaseHost: Joi.string().required(),
+  databaseConfig: Joi.object({
+    user: Joi.string().required(),
+    password: Joi.string().required(),
+    host: Joi.string().required(),
+    port: Joi.number().min(1000).required(),
+    database: Joi.string().required(),
+  }).required(),
   openRouterKey: Joi.string().required(),
 });

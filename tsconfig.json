@@ -1,5 +1,5 @@
 {
-  "exclude": ["./tests/**/*", "jest.config.ts"],
+  "exclude": ["./tests/**/*", "jest.config.ts", "knexfile.ts", "./migrations/**/*"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
@@ -21,6 +21,6 @@
     /* Type Checking */
     "strict": true /* Enable all strict type-checking options. */,
 
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true
   }
 }

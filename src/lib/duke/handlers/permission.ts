@@ -1,4 +1,3 @@
-import { userPermissionModel } from '../../database/models/userpermission.model.js';
 import type { Duke } from '../duke.js';
 import type { PrivmsgCommand } from '../privmsgCommand.js';
 import { CommandHandler } from './CommandHandler.js';
@@ -7,7 +6,7 @@ import wildcardMatch from 'wildcard-match';
 export class PermissionHandler extends CommandHandler {
   public readonly commandName = 'permission';
 
-  private hostRegex = /[a-zA-Z0-9\*\?\[\]\\`{}\-_|]+![a-zA-Z0-9\*\?\~\_\-\.]+@[a-zA-Z0-9\*\?\.\-:]/;
+  private hostRegex = /[a-zA-Z0-9*?[\]\\`{}\-_|]+![a-zA-Z0-9*?~_\-.]+@[a-zA-Z0-9*?.\-:]/;
 
   help(): string {
     const p = this.duke.config.privmsgCommandPrefix;
@@ -22,15 +21,13 @@ export class PermissionHandler extends CommandHandler {
   async handle(duke: Duke, command: PrivmsgCommand): Promise<void> {
     const p = this.duke.config.privmsgCommandPrefix;
 
-    const _userPermissionModel = userPermissionModel(duke.config.database);
-
     const maxLevel = duke.config.maxPermissionLevel;
 
     const prefix = `${p}${this.commandName}`;
 
     const params = command.privmsg.text.substring(prefix.length).trim().split(' ');
 
-    const allPermissions = await _userPermissionModel.find();
+    const allPermissions = await this.duke.config.database('userPermissions').select('*');
 
     if (params.length === 0 || params[0].length === 0) {
       const permission = allPermissions.find((perm) => {
@@ -53,11 +50,16 @@ export class PermissionHandler extends CommandHandler {
     }
 
     const existingPermission = allPermissions.find((perm) => {
-      return perm.serverName === command.privmsg.client.serverName && wildcardMatch(user)(perm.mask.toLowerCase());
+      return (
+        perm.serverName === command.privmsg.client.serverName &&
+        wildcardMatch(user)(perm.mask.toLowerCase())
+      );
     });
 
     if (actionOrUser !== 'add' && actionOrUser !== 'delete') {
-      command.privmsg.reply(`User ${actionOrUser} has permission level ${existingPermission?.level ?? 0}.`);
+      command.privmsg.reply(
+        `User ${actionOrUser} has permission level ${existingPermission?.level ?? 0}.`,
+      );
       return;
     }
 
@@ -73,9 +75,13 @@ export class PermissionHandler extends CommandHandler {
       );
     });
 
-
-    if (!callerPermission || (existingPermission && callerPermission.level < existingPermission.level)) {
-      command.privmsg.reply('You cannot modify the permissions of a user with a higher permission level than you.');
+    if (
+      !callerPermission ||
+      (existingPermission && callerPermission.level < existingPermission.level)
+    ) {
+      command.privmsg.reply(
+        'You cannot modify the permissions of a user with a higher permission level than you.',
+      );
       return;
     }
 
@@ -96,24 +102,36 @@ export class PermissionHandler extends CommandHandler {
 
       if (existingPermission) {
         existingPermission.level = level;
+
         existingPermission.mask = mask.toLowerCase();
-        await _userPermissionModel.updateOne({ _id: existingPermission._id }, existingPermission);
+
+        await this.duke.config
+          .database('userPermissions')
+          .where('_id', existingPermission.id)
+          .update(existingPermission);
+
         command.privmsg.reply(`Updated permission for user ${mask} to level ${level}.`);
       } else {
-        await _userPermissionModel.insertOne({
+        await this.duke.config.database('userPermissions').insert({
           serverName: command.privmsg.client.serverName,
           mask: mask.toLowerCase(),
           level,
         });
+
         command.privmsg.reply(`Added permission for user ${mask} with level ${level}.`);
       }
     } else {
       if (!existingPermission) {
         command.privmsg.reply(`No existing permission found for user ${mask}.`);
+
         return;
       }
 
-      await _userPermissionModel.deleteOne({ _id: existingPermission._id });
+      await this.duke.config
+        .database('userPermissions')
+        .where('_id', existingPermission.id)
+        .delete();
+
       command.privmsg.reply(`Deleted permission for user ${mask}.`);
     }
   }

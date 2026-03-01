@@ -1,12 +1,20 @@
 import { Err, Ok, Result } from '../../../types/result.type.js';
-import { Player } from '../../database/models/player.model.js';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import { Colour, FormattingBuilder } from '../../irc/formatting.js';
 import { Skills } from '../../../types/skills.type.js';
 
-export async function lookup(name: string): Promise<Result<Player>> {
+export interface PlayerApiResponse {
+  name: string;
+  skills: {
+    skillName: string;
+    level: string;
+    xp: string;
+  }[];
+}
+
+export async function lookup(name: string): Promise<Result<PlayerApiResponse>> {
   try {
     const url = `https://2004.lostcity.rs/api/hiscores/player/${name}`;
     const response = await fetch(url);
@@ -36,7 +44,7 @@ export async function lookup(name: string): Promise<Result<Player>> {
   }
 }
 
-export function formatPlayerSkills(player: Player): string {
+export function formatPlayerSkills(player: PlayerApiResponse): string {
   const { name, skills } = player;
 
   const reply = new FormattingBuilder('')

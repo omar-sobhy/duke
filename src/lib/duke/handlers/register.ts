@@ -1,11 +1,8 @@
-import mongoose from 'mongoose';
-import { Player, playerModel } from '../../database/models/player.model.js';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
-import { formatPlayerSkills, lookup } from './lookup.js';
+import { formatPlayerSkills, lookup, type PlayerApiResponse } from './lookup.js';
 import { Err, Result } from '../../../types/result.type.js';
-import { ircUserModel } from '../../database/models/ircuser.model.js';
 
 export class RegisterHandler extends CommandHandler {
   help(): string {
@@ -35,9 +32,11 @@ export class RegisterHandler extends CommandHandler {
     command.privmsg.reply(formatPlayerSkills(result.data!));
   }
 
-  async register(duke: Duke, command: PrivmsgCommand): Promise<Result<Player>> {
+  async register(duke: Duke, command: PrivmsgCommand): Promise<Result<PlayerApiResponse>> {
     if (command.params.length === 0) {
-      return Err('Usage: !register <username>.');
+      const p = this.duke.config.privmsgCommandPrefix;
+
+      return Err(`Usage: ${p}register <username>.`);
     }
 
     const result = await lookup(command.params.join(' '));
@@ -49,31 +48,41 @@ export class RegisterHandler extends CommandHandler {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const playerData = result.data!;
 
+    const transaction = await duke.config.database.transaction();
+
     try {
-      const _playerModel = playerModel(mongoose);
-      if (!(await _playerModel.findOne({ name: command.params.join(' ') }))) {
-        await new _playerModel(playerData).save();
+      const existing = await transaction('players').where({ name: playerData.name }).first();
+
+      if (!existing) {
+        const player = (
+          await transaction('players').insert(
+            {
+              name: playerData.name,
+            },
+            '*',
+          )
+        )[0];
+
+        for (const skill of result.data?.skills ?? []) {
+          await transaction('skills')
+            .insert({
+              playerId: player.id,
+              skillName: skill.skillName,
+              level: skill.level,
+              xp: skill.xp,
+            })
+            .onConflict(['playerId', 'skillName'])
+            .merge();
+        }
       }
 
-      const _ircUserModel = ircUserModel(mongoose);
-      let ircUser = await _ircUserModel.findOne({
-        nick: command.privmsg.sender.nickname,
-      });
-
-      if (!ircUser) {
-        ircUser = await new _ircUserModel({
-          nick: command.privmsg.sender.nickname,
-          players: [],
-          mustIdentify: false,
-        }).save();
-      }
-
-      // ircUser.players.push(player.id);
-      await ircUser.save();
+      await transaction.commit();
 
       return result;
     } catch (error) {
       console.error(error);
+
+      await transaction.rollback();
 
       return Err('An unknown error occurred.');
     }
