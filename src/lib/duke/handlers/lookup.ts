@@ -30,9 +30,9 @@ export async function lookup(name: string): Promise<Result<Player>> {
       name,
       skills,
     });
-  } catch {
+  } catch (error) {
     // TODO
-    return Err('');
+    return Err("Lookup error", error);
   }
 }
 
