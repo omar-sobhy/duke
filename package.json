@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@openrouter/sdk": "^0.1.4",
+    "@openrouter/sdk": "^0.9.11",
     "@types/dotenv": "^6.1.1",
     "cheerio": "^1.0.0",
     "dotenv": "^17.3.1",
@@ -23,6 +23,7 @@
     "pg": "^8.19.0",
     "superagent": "^10.2.3",
     "wildcard-match": "^5.1.4",
+    "winston": "^3.19.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {

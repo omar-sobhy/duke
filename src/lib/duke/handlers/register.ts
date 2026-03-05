@@ -80,7 +80,7 @@ export class RegisterHandler extends CommandHandler {
 
       return result;
     } catch (error) {
-      console.error(error);
+      duke.config.logger.error(error as never, 'register');
 
       await transaction.rollback();
 

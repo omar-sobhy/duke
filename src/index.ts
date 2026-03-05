@@ -2,6 +2,7 @@ import { Duke } from './lib/duke/duke.js';
 import { readFile } from 'node:fs/promises';
 import { configSchema } from './lib/duke/config.js';
 import knex from 'knex';
+import * as winston from 'winston';
 
 const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
@@ -42,6 +43,19 @@ for (const client of config.value.clients) {
   }
 }
 
-const duke = new Duke({ ...config.value, database });
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    }),
+  );
+}
+
+const duke = new Duke({ ...config.value, database, logger });
 
 duke.connect();

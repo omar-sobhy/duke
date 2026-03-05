@@ -88,10 +88,6 @@ export class Client extends EventEmitter<Events> {
     this.socket.setEncoding('utf-8');
 
     this.addListener('RawMessage', (message) => {
-      if (this.logging) {
-        console.log(`>>> ${message}`);
-      }
-
       const parsedMessage = Message.parse(message, this);
 
       if (parsedMessage.command === Commands.PRIVMSG) {

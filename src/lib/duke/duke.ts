@@ -14,9 +14,11 @@ import { PermissionHandler } from './handlers/permission.js';
 import schedule from 'node-schedule';
 import { RefreshHandler } from './handlers/refresh.js';
 import { Knex } from 'knex';
+import type { Logger } from 'winston';
 
 export interface DukeConfig extends RootConfig {
   database: Knex;
+  logger: Logger;
 }
 
 export class Duke {
@@ -50,11 +52,11 @@ export class Duke {
   public async connect() {
     this.clients.forEach(async (c) => {
       c.on('RawMessage', (message) => {
-        console.log(`<<< ${message}`);
+        this.config.logger.info(message, 'incoming_message');
       });
 
       c.on('RawSend', (message) => {
-        console.log(`>>> ${message}`);
+        this.config.logger.info(message, 'outgoing_message');
       });
 
       c.on('Privmsg', (p) => this.privmsgListener(p));
@@ -133,11 +135,11 @@ export class Duke {
       const result = await lookup(player.name);
 
       if (result.type === 'error') {
-        console.error(result);
+        this.config.logger.error(result.data);
         continue;
       }
 
-      console.log(`--- Fetched ${result.data?.name} ---`);
+      this.config.logger.info(`fetched ${player.name}`);
 
       const skills = await transaction('skills').where('playerId', player.id).select('*');
 

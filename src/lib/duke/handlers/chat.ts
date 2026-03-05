@@ -3,7 +3,6 @@ import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
 import yargs from 'yargs';
-import type { ChatMessage } from '../../../types/database/chatmessage.database.type.js';
 
 export class ChatHandler extends CommandHandler {
   private processing = new Set<string>();
@@ -173,9 +172,14 @@ export class ChatHandler extends CommandHandler {
         messages.push({ role: 'user', content: args._.join(' ') });
 
         const completion = await duke.openRouter.chat.send({
-          model: 'openai/gpt-4.1-mini',
-          messages,
+          chatGenerationParams: {
+            model: 'claude-haiku-4.5',
+            plugins: [{ id: 'web', engine: 'exa' }],
+            messages,
+          },
         });
+
+        duke.config.logger.info(JSON.stringify(completion), 'chat');
 
         const choice = completion.choices[0];
 
@@ -213,7 +217,7 @@ export class ChatHandler extends CommandHandler {
           splitIndex: 1,
         });
       } catch (error) {
-        console.error(error);
+        duke.config.logger.error(error as never, 'chat');
 
         await command.privmsg.reply('An OpenRouter error occurred.');
       }
