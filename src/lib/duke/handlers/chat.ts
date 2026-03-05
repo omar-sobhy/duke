@@ -174,7 +174,13 @@ export class ChatHandler extends CommandHandler {
         const completion = await duke.openRouter.chat.send({
           chatGenerationParams: {
             model: 'claude-haiku-4.5',
-            plugins: [{ id: 'web', engine: 'exa' }],
+            plugins: [
+              {
+                id: 'web',
+                engine: 'exa',
+                searchPrompt: `A web search was conducted on \`${Date.now()}\`. Incorporate the following web search results into your response. It is not necessary to cite the URLs in the response.`,
+              },
+            ],
             messages,
           },
         });
