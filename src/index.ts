@@ -4,6 +4,12 @@ import { configSchema } from './lib/duke/config.js';
 import knex from 'knex';
 import * as winston from 'winston';
 
+process.on('SIGTERM', () => {
+  logger?.info('process exiting...', 'startup');
+
+  process.exit(0);
+});
+
 const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
 const config = configSchema.validate(JSON.parse(rawConfig));

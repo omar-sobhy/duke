@@ -12,6 +12,14 @@
     "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
 
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker": {
+      "version": "29.3.0-1",
+      "moby": false,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+
   "customizations": {
     "vscode": {
       "extensions": [

@@ -1,18 +1,23 @@
-import { config as dotenvConfig } from 'dotenv';
+import { readFile } from 'fs/promises';
+import { configSchema } from './src/lib/duke/config.ts';
+
 import type { Knex } from 'knex';
 
-dotenvConfig();
+const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
-// Update with your config settings.
+const config = configSchema.validate(JSON.parse(rawConfig));
 
+if (config.error) {
+  throw config.error;
+}
 export default {
   client: 'pg',
   connection: {
     database: 'duke',
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    host: process.env.POSTGRES_HOST,
-    port: Number(process.env.POSTGRES_PORT),
+    user: config.value.databaseConfig.user,
+    password: config.value.databaseConfig.password,
+    host: config.value.databaseConfig.host,
+    port: config.value.databaseConfig.port,
   },
   pool: {
     min: 2,

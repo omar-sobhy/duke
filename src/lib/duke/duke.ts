@@ -215,8 +215,6 @@ export class Duke {
           .merge();
       }
 
-      await transaction.commit();
-
       this.clients.forEach((c) => {
         if (updated) {
           // TODO: don't hardcode channel
@@ -224,5 +222,7 @@ export class Duke {
         }
       });
     }
+
+    await transaction.commit();
   }
 }
