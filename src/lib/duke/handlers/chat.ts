@@ -80,10 +80,14 @@ export class ChatHandler extends CommandHandler {
 
       if (!chatContext) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chatContext = (await duke.config.database('chatContexts').insert({
+        const contexts = duke.config.database('chatContexts');
+
+        const result = await contexts.insert({
           type: 'channel',
           identifier,
-        }))!;
+        }).returning("*");
+
+        chatContext = result[0];
       }
 
       if (args.c) {
