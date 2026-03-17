@@ -1,74 +1,47 @@
-import Joi from 'joi';
-import type { UserPermission } from '../../types/database/userpermission.database.type.js';
+import * as z from 'zod';
 
-export interface ClientConfig {
-  nickname: string;
-  logging: boolean;
-  host: string;
-  port: number;
-  serverName: string;
-  throttleInterval: number;
-  initialChannels?: { name: string; password?: string }[];
-  username?: string;
-  wallops?: boolean;
-  invisible?: boolean;
-  realName?: string;
-  autotryNextNick?: boolean;
-  maxAutotryNextNickTries?: number;
-  initPermissions: Omit<UserPermission, 'serverName'>[];
-}
-
-export interface RootConfig {
-  clients: ClientConfig[];
-  privmsgCommandPrefix: string;
-  databaseConfig: {
-    user: string;
-    password: string;
-    host: string;
-    port: number;
-    database: string;
-  };
-  openRouterKey: string;
-  maxPermissionLevel: number;
-}
-
-export const configSchema = Joi.object<RootConfig>({
-  clients: Joi.array().items(
-    Joi.object<ClientConfig>({
-      nickname: Joi.string().alphanum().min(1).max(30).required(),
-      logging: Joi.boolean().default(false),
-      host: Joi.string().min(1).required(),
-      port: Joi.number().min(1000).required(),
-      serverName: Joi.string().min(1).required(),
-      initialChannels: Joi.array().items(
-        Joi.object({
-          name: Joi.string().min(1).required(),
-          password: Joi.string().min(1),
+export const zConfig = z.object({
+  clients: z.array(
+    z.object({
+      nickname: z.string().regex(/[a-z0-9]+/),
+      logging: z.boolean().default(false),
+      host: z.string().min(1),
+      port: z.number().min(1000),
+      serverName: z.string().min(1),
+      initialChannels: z.array(
+        z.object({
+          name: z.string().min(1),
+          password: z.string().min(1).optional(),
         }),
       ),
-      username: Joi.string().alphanum().min(1),
-      realName: Joi.string().alphanum().min(1),
-      autotryNextNick: Joi.boolean().default(false),
-      invisible: Joi.boolean().default(false),
-      wallops: Joi.boolean().default(false),
-      maxAutotryNextNickTries: Joi.number().min(1),
-      throttleInterval: Joi.number().min(1).default(200),
-      initPermissions: Joi.array()
-        .items(
-          Joi.object<Omit<UserPermission, 'serverName'>>({
-            level: Joi.number().min(1).required().max(100),
-            mask: Joi.string().required(),
-          }),
-        )
-    }).required(),
+      username: z.string().regex(/[a-z0-9]+/),
+      realName: z.string().regex(/[a-z0-9]+/),
+      autoTryNextNick: z.boolean().default(false),
+      invisible: z.boolean().default(false),
+      wallops: z.boolean().default(false),
+      maxAutoTryNextNickTries: z.number().min(1),
+      throttleInterval: z.number().min(1).default(200),
+      initPermissions: z.array(
+        z.object({
+          level: z.number().min(1).max(100),
+          mask: z.string(),
+        }),
+      ),
+    }),
   ),
-  privmsgCommandPrefix: Joi.string().min(1).default('!'),
-  databaseConfig: Joi.object({
-    user: Joi.string().required(),
-    password: Joi.string().required(),
-    host: Joi.string().required(),
-    port: Joi.number().min(1000).required(),
-    database: Joi.string().required(),
-  }).required(),
-  openRouterKey: Joi.string().required(),
+  privmsgCommandPrefix: z.string().min(1).default('!'),
+  databaseConfig: z.object({
+    user: z.string(),
+    password: z.string(),
+    host: z.string(),
+    port: z.number().min(1000),
+    database: z.string(),
+  }),
+  openRouterKey: z.string(),
+  openWeatherMapKey: z.string(),
+  mapBoxKey: z.string(),
 });
+
+export type ClientConfig = z.infer<typeof zConfig>['clients'][number];
+
+export type RootConfig = z.infer<typeof zConfig>;

@@ -1,6 +1,6 @@
 import { Duke } from './lib/duke/duke.js';
 import { readFile } from 'node:fs/promises';
-import { configSchema } from './lib/duke/config.js';
+import { zConfig } from './lib/duke/config.js';
 import knex from 'knex';
 import * as winston from 'winston';
 
@@ -12,7 +12,7 @@ process.on('SIGTERM', () => {
 
 const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
-const config = configSchema.validate(JSON.parse(rawConfig));
+const config = zConfig.validate(JSON.parse(rawConfig));
 
 if (config.error) {
   throw config.error;

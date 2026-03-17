@@ -79,13 +79,12 @@ export class ChatHandler extends CommandHandler {
         .first();
 
       if (!chatContext) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const contexts = duke.config.database('chatContexts');
 
         const result = await contexts.insert({
           type: 'channel',
           identifier,
-        }).returning("*");
+        }).returning('*');
 
         chatContext = result[0];
       }

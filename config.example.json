@@ -28,5 +28,7 @@
     "database": "duke",
     "port": 5432
   },
-  "openRouterKey": "<secret>"
+  "openRouterKey": "<secret>",
+  "openWeatherMapKey": "<secret>",
+  "mapBoxKey": "<secret>"
 }
