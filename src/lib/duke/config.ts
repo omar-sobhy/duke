@@ -14,12 +14,18 @@ export const zConfig = z.object({
           password: z.string().min(1).optional(),
         }),
       ),
-      username: z.string().regex(/[a-z0-9]+/),
-      realName: z.string().regex(/[a-z0-9]+/),
-      autoTryNextNick: z.boolean().default(false),
+      username: z
+        .string()
+        .regex(/[a-z0-9]+/)
+        .optional(),
+      realName: z
+        .string()
+        .regex(/[a-z0-9]+/)
+        .optional(),
+      autotryNextNick: z.boolean().default(false),
       invisible: z.boolean().default(false),
       wallops: z.boolean().default(false),
-      maxAutoTryNextNickTries: z.number().min(1),
+      maxAutotryNextNickTries: z.number().min(1).default(3),
       throttleInterval: z.number().min(1).default(200),
       initPermissions: z.array(
         z.object({
@@ -29,6 +35,7 @@ export const zConfig = z.object({
       ),
     }),
   ),
+  maxPermissionLevel: z.number().min(10).default(100),
   privmsgCommandPrefix: z.string().min(1).default('!'),
   databaseConfig: z.object({
     user: z.string(),

@@ -41,8 +41,19 @@ export function strikethrough(text: string) {
 export class FormattingBuilder {
   constructor(public text: string) {}
 
-  colour(text: string, colourName: Colour) {
-    this.text += colour(text, colourName);
+  colour(text: string, colourName: Colour, opts?: { bold?: boolean; italics?: boolean }) {
+    let textToAdd = text;
+
+    if (opts?.bold) {
+      textToAdd = bold(textToAdd);
+    }
+
+    if (opts?.italics) {
+      textToAdd = italics(textToAdd);
+    }
+
+    this.text += colour(textToAdd, colourName);
+
     return this;
   }
 

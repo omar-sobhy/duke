@@ -12,25 +12,21 @@ process.on('SIGTERM', () => {
 
 const rawConfig = await readFile('config.json', { encoding: 'utf-8' });
 
-const config = zConfig.validate(JSON.parse(rawConfig));
-
-if (config.error) {
-  throw config.error;
-}
+const config = zConfig.parse(JSON.parse(rawConfig));
 
 const database = knex({
   client: 'pg',
   connection: {
-    host: config.value.databaseConfig.host,
-    user: config.value.databaseConfig.user,
-    password: config.value.databaseConfig.password,
-    database: config.value.databaseConfig.database,
-    port: config.value.databaseConfig.port,
+    host: config.databaseConfig.host,
+    user: config.databaseConfig.user,
+    password: config.databaseConfig.password,
+    database: config.databaseConfig.database,
+    port: config.databaseConfig.port,
     ssl: false,
   },
 });
 
-for (const client of config.value.clients) {
+for (const client of config.clients) {
   for (const permission of client.initPermissions) {
     const existing = await database('userPermissions')
       .where({
@@ -62,6 +58,6 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
-const duke = new Duke({ ...config.value, database, logger });
+const duke = new Duke({ ...config, database, logger });
 
 duke.connect();

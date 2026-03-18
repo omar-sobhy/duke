@@ -15,6 +15,7 @@ import schedule from 'node-schedule';
 import { RefreshHandler } from './handlers/refresh.js';
 import { Knex } from 'knex';
 import type { Logger } from 'winston';
+import { WeatherHandler } from './handlers/weather.js';
 
 export interface DukeConfig extends RootConfig {
   database: Knex;
@@ -42,6 +43,7 @@ export class Duke {
       HelpHandler,
       PermissionHandler,
       RefreshHandler,
+      WeatherHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({

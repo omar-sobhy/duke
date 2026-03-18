@@ -4,8 +4,9 @@ import type { ChatMessage } from './chatmessage.database.type.js';
 import type { Player } from './player.database.type.js';
 import type { UserPermission } from './userpermission.database.type.js';
 import type { Skill } from './playerskill.database.type.js';
+import type { Location } from './location.database.type.js';
 
-declare module 'knex/types/tables' {
+declare module 'knex/types/tables.js' {
   interface Tables {
     users: IrcUser;
     chatContexts: ChatContext;
@@ -13,5 +14,6 @@ declare module 'knex/types/tables' {
     players: Player;
     userPermissions: UserPermission;
     skills: Skill;
+    locations: Location;
   }
 }

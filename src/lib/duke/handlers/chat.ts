@@ -1,4 +1,4 @@
-import { SystemMessage, AssistantMessage, UserMessage } from '@openrouter/sdk/esm/models';
+import { SystemMessage, AssistantMessage, UserMessage } from '@openrouter/sdk/models';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
