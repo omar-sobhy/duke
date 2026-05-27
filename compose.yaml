@@ -19,7 +19,6 @@ services:
     networks:
       - duke
     env_file:
-      - .env
 volumes:
   db:
 networks:
