@@ -20,7 +20,7 @@
     "lodash": "^4.17.21",
     "node-schedule": "^2.1.1",
     "pg": "^8.19.0",
-    "superagent": "^10.2.3",
+    "superagent": "^10.3.0",
     "wildcard-match": "^5.1.4",
     "winston": "^3.19.0",
     "yargs": "^18.0.0",
