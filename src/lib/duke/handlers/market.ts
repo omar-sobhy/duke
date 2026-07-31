@@ -58,14 +58,14 @@ export class MarketHandler extends CommandHandler {
       const formatted = builder
         .colour(r.item.name, Colour.BLUE)
         .normal(' (')
-        .colour('Buy: ', Colour.RED)
+        .colour('Buy ', Colour.RED)
         .normal(`Average: ${this.formatNumber(r.buyStats?.average)}, `)
         .normal(`Min: ${this.formatNumber(r.buyStats?.min)}, `)
-        .normal(`Max: ${this.formatNumber(r.buyStats?.average)} -- `)
-        .colour('Sell: ', Colour.GREEN)
+        .normal(`Max: ${this.formatNumber(r.buyStats?.max)} -- `)
+        .colour('Sell ', Colour.GREEN)
         .normal(`Average: ${this.formatNumber(r.sellStats?.average)}, `)
         .normal(`Min: ${this.formatNumber(r.sellStats?.min)}, `)
-        .normal(`Max: ${this.formatNumber(r.sellStats?.average)})`).text;
+        .normal(`Max: ${this.formatNumber(r.sellStats?.max)})`).text;
 
       return formatted;
     });
