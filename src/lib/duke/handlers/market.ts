@@ -74,6 +74,12 @@ export class MarketHandler extends CommandHandler {
   }
 
   private formatNumber(n?: number): string {
-    return n?.toFixed(0) ?? 'N/A';
+    if (!n) {
+      return 'N/A';
+    }
+
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+    }).format(n);
   }
 }
