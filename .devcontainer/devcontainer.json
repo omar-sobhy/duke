@@ -17,6 +17,12 @@
       "version": "29.3.0-1",
       "moby": false,
       "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "installOhMyZshConfig": true,
+      "configureZshAsDefaultShell": true
     }
   },
 
@@ -33,7 +39,12 @@
     }
   },
 
-  "postCreateCommand": "sudo chown node node_modules"
+  "forwardPorts": [5432],
+  "portsAttributes": {
+    "5432": { "label": "PostgreSQL" }
+  },
+
+  "postCreateCommand": "sh .devcontainer/setup.sh"
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},

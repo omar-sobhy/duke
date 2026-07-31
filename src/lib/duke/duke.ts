@@ -14,8 +14,9 @@ import { PermissionHandler } from './handlers/permission.js';
 import schedule from 'node-schedule';
 import { RefreshHandler } from './handlers/refresh.js';
 import { Knex } from 'knex';
-import type { Logger } from 'winston';
+import { Logger } from 'winston';
 import { WeatherHandler } from './handlers/weather.js';
+import { MarketHandler } from './handlers/market.js';
 
 export interface DukeConfig extends RootConfig {
   database: Knex;
@@ -44,6 +45,7 @@ export class Duke {
       PermissionHandler,
       RefreshHandler,
       WeatherHandler,
+      MarketHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
@@ -103,7 +105,11 @@ export class Duke {
             return;
           }
 
-          h.handle(this, privmsgCommand);
+          h.handle(this, privmsgCommand).catch((e) => {
+            this.config.logger.error(e);
+
+            privmsgCommand.privmsg.reply('An unknown error occurred.');
+          });
         }
       });
 

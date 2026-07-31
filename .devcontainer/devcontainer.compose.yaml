@@ -13,7 +13,7 @@ services:
     networks:
       - duke
     env_file:
-      - ../.env
+      - ./.env
 volumes:
   db:
 networks:

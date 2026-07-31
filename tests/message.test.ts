@@ -5,9 +5,18 @@ import { Client } from '../src/lib/irc/index.js';
 
 describe('message parsing', () => {
   const client = new Client({
+    nickname: 'dummy',
+    logging: false,
     host: 'dummy',
     port: 6667,
     serverName: 'dummy',
+    initialChannels: [],
+    autotryNextNick: false,
+    invisible: false,
+    wallops: false,
+    maxAutotryNextNickTries: 3,
+    throttleInterval: 200,
+    initPermissions: [],
   });
 
   test('PING :714425614', () => {
