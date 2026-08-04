@@ -21,3 +21,7 @@ export async function logErrorAndReply(
 
   return void command.privmsg.reply(message);
 }
+
+export async function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

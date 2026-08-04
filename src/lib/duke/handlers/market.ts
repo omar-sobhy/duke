@@ -4,7 +4,7 @@ import { CommandHandler } from './CommandHandler.js';
 import { searchItem } from '../modules/market/search.js';
 import { fetchListings } from '../modules/market/listings.js';
 import { calculateListingStats } from '../modules/market/stats.js';
-import { colour, Colour, FormattingBuilder } from '../../irc/formatting.js';
+import {  Colour, FormattingBuilder } from '../../irc/formatting.js';
 
 export class MarketHandler extends CommandHandler {
   help(): string {

@@ -17,6 +17,7 @@ import { Knex } from 'knex';
 import { Logger } from 'winston';
 import { WeatherHandler } from './handlers/weather.js';
 import { MarketHandler } from './handlers/market.js';
+import { wait } from '../util.js';
 
 export interface DukeConfig extends RootConfig {
   database: Knex;
@@ -145,6 +146,10 @@ export class Duke {
       if (result.type === 'error') {
         this.config.logger.error(result.data);
         continue;
+      }
+
+      if (result.data.ratelimit.limit && result.data.ratelimit.remaining <= 0) {
+        await wait(result.data.ratelimit.reset * 1000);
       }
 
       this.config.logger.info(`fetched ${player.name}`);

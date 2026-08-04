@@ -12,12 +12,25 @@ export interface PlayerApiResponse {
     level: string;
     xp: string;
   }[];
+  ratelimit: {
+    limit: number;
+    remaining: number;
+    reset: number;
+  };
 }
 
 export async function lookup(name: string): Promise<Result<PlayerApiResponse>> {
   try {
     const url = `https://2004.lostcity.rs/api/hiscores/player/${name}`;
+
     const response = await fetch(url);
+
+    const ratelimit = {
+      limit: parseInt(response.headers.get('X-RateLimit-Limit') || '0'),
+      remaining: parseInt(response.headers.get('X-RateLimit-Remaining') || '0'),
+      reset: parseInt(response.headers.get('X-RateLimit-Reset') || '0'),
+    };
+
     const data: {
       type: number;
       level: number;
@@ -37,10 +50,11 @@ export async function lookup(name: string): Promise<Result<PlayerApiResponse>> {
     return Ok({
       name,
       skills,
+      ratelimit,
     });
   } catch (error) {
     // TODO
-    return Err("Lookup error", error);
+    return Err('Lookup error', error);
   }
 }
 
