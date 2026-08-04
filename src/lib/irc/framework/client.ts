@@ -51,6 +51,8 @@ export class Client extends EventEmitter<Events> {
   private wallops: boolean;
   private invisible: boolean;
 
+  public readonly fetchSendChannels: string[] = [];
+
   public channels: Channel[] = [];
 
   private readonly queue: { data: string; writeRawOpts?: WriteRawOpts }[] = [];
@@ -83,6 +85,8 @@ export class Client extends EventEmitter<Events> {
     this.realName = options.realName ?? this.nickname;
     this.wallops = options.wallops ?? defaultOptions.wallops;
     this.invisible = options.invisible ?? defaultOptions.invisible;
+
+    this.fetchSendChannels = options.fetchSendChannels ?? [];
 
     this.socket = new Socket();
     this.socket.setEncoding('utf-8');

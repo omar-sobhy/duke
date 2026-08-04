@@ -180,7 +180,55 @@ export class Duke {
 
       let updated = false;
 
-      const builder = new FormattingBuilder('').colour(player.name, Colour.RED);
+      const oldTotalLevel = skills.find((s) => s.skillName === 'Overall')?.level;
+
+      const newTotalLevel = result.data?.skills.find((s) => s.skillName === 'Overall')?.level;
+
+      let totalLevelDiff = 0;
+
+      const formatter = new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: 0,
+      });
+
+      if (oldTotalLevel && newTotalLevel && oldTotalLevel !== newTotalLevel) {
+        totalLevelDiff = Number.parseInt(newTotalLevel) - Number.parseInt(oldTotalLevel);
+      }
+
+      const totalXpDiff = result.data?.skills.reduce((acc, s) => {
+        const oldSkill = skills.find((old) => old.skillName === s.skillName);
+        if (!oldSkill) {
+          return acc + Number.parseInt(s.xp.replaceAll(',', ''));
+        }
+
+        const diff =
+          Number.parseInt(s.xp.replaceAll(',', '')) -
+          Number.parseInt(oldSkill.xp.replaceAll(',', '') ?? '0');
+
+        return acc + diff;
+      }, 0);
+
+      const builder = new FormattingBuilder('')
+        .colour(player.name, Colour.RED)
+        .normal(' :: ')
+        .normal(`Total level ${newTotalLevel} `);
+
+      if (totalXpDiff > 0) {
+        const totalXpBuilder = new FormattingBuilder('');
+
+        if (totalLevelDiff > 0) {
+          totalXpBuilder
+            .colour('((', Colour.LIGHT_GREEN)
+            .colour(`+${totalLevelDiff}`, Colour.YELLOW)
+            .colour(') ', Colour.LIGHT_GREEN)
+            .colour(`+${formatter.format(totalXpDiff)} XP)`, Colour.LIGHT_GREEN);
+        } else {
+          totalXpBuilder
+            .colour('(', Colour.LIGHT_GREEN)
+            .colour(`+${formatter.format(totalXpDiff)} XP)`, Colour.LIGHT_GREEN);
+        }
+
+        builder.normal(totalXpBuilder.text);
+      }
 
       Object.keys(skillsMap).forEach((s) => {
         const currentSkill = skills.find((currentSkill) => currentSkill.skillName === s);
@@ -199,7 +247,7 @@ export class Duke {
             .normal(' :: ')
             .normal(`${emojii} `)
             .colour(next.level, Colour.GREEN)
-            .colour(` (+${next.xp} XP) `, Colour.LIGHT_GREEN);
+            .colour(` (+${formatter.format(Number.parseInt(next.xp))} XP) `, Colour.LIGHT_GREEN);
         } else if (currentSkill.xp !== next.xp) {
           updated = true;
 
@@ -208,11 +256,23 @@ export class Duke {
 
           const level = next.level;
 
-          builder
-            .normal(' :: ')
-            .normal(`${emojii} `)
-            .colour(level, Colour.GREEN)
-            .colour(` (+${diff.toFixed()} XP) `, Colour.LIGHT_GREEN);
+          const levelDiff = Number(next.level) - Number(currentSkill.level);
+
+          if (levelDiff > 0) {
+            builder
+              .normal(' :: ')
+              .normal(`${emojii} `)
+              .colour(level, Colour.GREEN)
+              .colour(' ((', Colour.LIGHT_GREEN)
+              .colour(`+${levelDiff}`, Colour.YELLOW)
+              .colour(`) +${formatter.format(diff)} XP) `, Colour.LIGHT_GREEN);
+          } else {
+            builder
+              .normal(' :: ')
+              .normal(`${emojii} `)
+              .colour(level, Colour.GREEN)
+              .colour(` (+${formatter.format(diff)} XP) `, Colour.LIGHT_GREEN);
+          }
         }
       });
 
@@ -230,8 +290,7 @@ export class Duke {
 
       this.clients.forEach((c) => {
         if (updated) {
-          // TODO: don't hardcode channel
-          c.writeRaw(`PRIVMSG #trollhour :${builder.text}`);
+          c.writeRaw(`PRIVMSG ${c.fetchSendChannels[0]} :${builder.text}`);
         }
       });
     }

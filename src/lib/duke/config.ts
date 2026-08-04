@@ -33,6 +33,7 @@ export const zConfig = z.object({
           mask: z.string(),
         }),
       ),
+      fetchSendChannels: z.array(z.string().min(1)),
     }),
   ),
   maxPermissionLevel: z.number().min(10).default(100),
