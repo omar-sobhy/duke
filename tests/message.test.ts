@@ -17,6 +17,7 @@ describe('message parsing', () => {
     maxAutotryNextNickTries: 3,
     throttleInterval: 200,
     initPermissions: [],
+    fetchSendChannels: [],
   });
 
   test('PING :714425614', () => {

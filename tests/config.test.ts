@@ -16,6 +16,7 @@ const config = {
       maxAutotryNextNickTries: 3,
       throttleInterval: 200,
       initPermissions: [],
+      fetchSendChannels: [],
     },
   ],
   privmsgCommandPrefix: '!',

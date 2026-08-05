@@ -17,6 +17,7 @@ import { Knex } from 'knex';
 import { Logger } from 'winston';
 import { WeatherHandler } from './handlers/weather.js';
 import { MarketHandler } from './handlers/market.js';
+import { XpHandler } from './handlers/xp.js';
 import { wait } from '../util.js';
 
 export interface DukeConfig extends RootConfig {
@@ -47,6 +48,7 @@ export class Duke {
       RefreshHandler,
       WeatherHandler,
       MarketHandler,
+      XpHandler,
     ].map((h) => new h(this));
 
     this.openRouter = new OpenRouter({
@@ -180,9 +182,13 @@ export class Duke {
 
       let updated = false;
 
-      const oldTotalLevel = skills.find((s) => s.skillName === 'Overall')?.level;
+      const oldOverall = skills.find((s) => s.skillName === 'Overall');
 
-      const newTotalLevel = result.data?.skills.find((s) => s.skillName === 'Overall')?.level;
+      const oldTotalLevel = oldOverall?.level;
+
+      const newOverall = result.data?.skills.find((s) => s.skillName === 'Overall');
+
+      const newTotalLevel = newOverall?.level;
 
       let totalLevelDiff = 0;
 
@@ -194,18 +200,11 @@ export class Duke {
         totalLevelDiff = Number.parseInt(newTotalLevel) - Number.parseInt(oldTotalLevel);
       }
 
-      const totalXpDiff = result.data?.skills.reduce((acc, s) => {
-        const oldSkill = skills.find((old) => old.skillName === s.skillName);
-        if (!oldSkill) {
-          return acc + Number.parseInt(s.xp.replaceAll(',', ''));
-        }
+      let totalXpDiff = 0;
 
-        const diff =
-          Number.parseInt(s.xp.replaceAll(',', '')) -
-          Number.parseInt(oldSkill.xp.replaceAll(',', '') ?? '0');
-
-        return acc + diff;
-      }, 0);
+      if (oldOverall && newOverall && oldOverall.xp !== newOverall.xp) {
+        totalXpDiff = Number.parseInt(newOverall.xp) - Number.parseInt(oldOverall.xp);
+      }
 
       const builder = new FormattingBuilder('')
         .colour(player.name, Colour.RED)
