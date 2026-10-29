@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals';
+import { afterAll, describe, expect, test } from '@jest/globals';
 import { Message } from '../src/lib/irc/framework/message/message.js';
 import { Commands } from '../src/lib/irc/framework/commands.js';
 import { Client } from '../src/lib/irc/index.js';
@@ -19,6 +19,8 @@ describe('message parsing', () => {
     initPermissions: [],
     fetchSendChannels: [],
   });
+
+  afterAll(() => client.destroy());
 
   test('PING :714425614', () => {
     const parsed = Message.parse('PING :714425614', client);

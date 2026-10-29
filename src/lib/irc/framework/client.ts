@@ -61,6 +61,8 @@ export class Client extends EventEmitter<Events> {
 
   private sending = false;
 
+  private readonly sendTimer: NodeJS.Timeout;
+
   /**
    * Creates a new Client with the specified options
    *
@@ -106,7 +108,7 @@ export class Client extends EventEmitter<Events> {
       }
     });
 
-    setInterval(() => {
+    this.sendTimer = setInterval(() => {
       if (this.sending) {
         return;
       }
@@ -317,6 +319,15 @@ export class Client extends EventEmitter<Events> {
 
   public async disconnect() {
     this.writeRaw('QUIT');
+  }
+
+  /**
+   * Stops the send queue and closes the socket, releasing all handles held by the client
+   */
+  public destroy() {
+    clearInterval(this.sendTimer);
+    this.readline?.close();
+    this.socket.destroy();
   }
 
   public getNickname(): string {
