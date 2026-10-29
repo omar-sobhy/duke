@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@openrouter/sdk": "^0.9.11",
+    "@openrouter/sdk": "^1.5.22",
     "@types/dotenv": "^6.1.1",
     "cheerio": "^1.2.0",
     "dotenv": "^17.3.1",
@@ -39,5 +39,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.72.1"
+  },
+  "allowScripts": {
+    "@openrouter/sdk@1.5.22": true
   }
 }
