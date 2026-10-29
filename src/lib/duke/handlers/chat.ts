@@ -1,4 +1,4 @@
-import { SystemMessage, AssistantMessage, UserMessage } from '@openrouter/sdk/models';
+import { ChatMessages } from '@openrouter/sdk/models';
 import { Duke } from '../duke.js';
 import { CommandHandler } from './CommandHandler.js';
 import { PrivmsgCommand } from '../privmsgCommand.js';
@@ -14,9 +14,10 @@ export class ChatHandler extends CommandHandler {
 
     return (
       `Chat with the AI model. Usage: ${p}` +
-      `chat [--clear|-c] [--name|-n <context name>] <message>.\n` +
+      `chat [--clear|-c] [--name|-n <context name>] [--model|-m <model name>] <message>.\n` +
       `--clear: Clears the chat context.\n` +
-      `--name: Uses or creates a named channel-wide chat context.`
+      `--name: Uses or creates a named channel-wide chat context.\n` +
+      `--model: Uses a specific OpenRouter model name string.`
     );
   }
 
@@ -52,6 +53,10 @@ export class ChatHandler extends CommandHandler {
           alias: 'name',
           type: 'string',
         },
+        m: {
+          alias: 'model',
+          type: 'string',
+        },
       })
       .help(false)
       .parserConfiguration({ 'halt-at-non-option': true })
@@ -81,10 +86,12 @@ export class ChatHandler extends CommandHandler {
       if (!chatContext) {
         const contexts = duke.config.database('chatContexts');
 
-        const result = await contexts.insert({
-          type: 'channel',
-          identifier,
-        }).returning('*');
+        const result = await contexts
+          .insert({
+            type: 'channel',
+            identifier,
+          })
+          .returning('*');
 
         chatContext = result[0];
       }
@@ -101,7 +108,7 @@ export class ChatHandler extends CommandHandler {
       if (args._.length === 0) {
         if (!args.c) {
           await command.privmsg.reply(
-            `Usage: ${duke.config.privmsgCommandPrefix}chat [--clear|-c] [--name|-n <context name>] <message>.`,
+            `Usage: ${duke.config.privmsgCommandPrefix}chat [--clear|-c] [--name|-n <context name>] [--model|-m <model>] <message>.`,
           );
         }
 
@@ -155,11 +162,11 @@ export class ChatHandler extends CommandHandler {
       }
 
       try {
-        const messages: (SystemMessage | UserMessage | AssistantMessage)[] = [
+        const messages: ChatMessages[] = [
           {
             role: 'system',
             content:
-              'You are an IRC bot. Try to be helpful in your responses. If you do not know the answer to a question, say you do not know. Responses should be in pure plaintext -- do not use markdown or similar.',
+              'You are an IRC bot. Try to be helpful in your responses. If you do not know the answer to a question, say you do not know. Responses should be in pure plaintext -- do not use markdown or similar. Limit your responses to less than 500 characters.',
           },
         ];
 
@@ -175,8 +182,8 @@ export class ChatHandler extends CommandHandler {
         messages.push({ role: 'user', content: args._.join(' ') });
 
         const completion = await duke.openRouter.chat.send({
-          chatGenerationParams: {
-            model: 'claude-haiku-4.5',
+          chatRequest: {
+            model: args.n ?? 'deepseek/deepseek-v4.1-flash-1017',
             plugins: [
               {
                 id: 'web',
