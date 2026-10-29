@@ -6,11 +6,17 @@ An IRC bot written in TypeScript.
 
 This bot is a Node.js program, so Node.js is required.
 
+A Postgres database is required.
+
 ## Setting up the environment
 
 Run `npm install`.
 
 Make a copy of `config.example.json`, named `config.json`, filling in the fields with the appropriate values.
+
+## Running the migrations
+
+Run `npx knex migrate:latest`.
 
 ## Starting the bot
 
